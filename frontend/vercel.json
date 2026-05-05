@@ -4,10 +4,6 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "regions": ["sin1"],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@pos_api_url",
-    "NEXT_PUBLIC_SOCKET_URL": "@pos_socket_url"
-  },
   "headers": [
     {
       "source": "/(.*)",
@@ -16,12 +12,6 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://your-api-domain.com/api/:path*"
     }
   ]
 }
