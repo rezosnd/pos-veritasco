@@ -4,12 +4,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Plus, Minus, Trash2, ShoppingBag, Loader2, MessageSquare, Receipt, Utensils } from 'lucide-react';
-import { orderApi, sessionApi } from '@/lib/api';
+import { orderApi, sessionApi, getBackendUrl } from '@/lib/api';
 import { useRestaurant } from '@/lib/restaurantContext';
 import useCartStore from '@/store/cartStore';
 import { validateLocation } from '@/lib/geo';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const BACKEND_URL = getBackendUrl();
 
 export default function CartPage({ params }) {
   const router = useRouter();

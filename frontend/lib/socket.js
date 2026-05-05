@@ -3,7 +3,8 @@
 import { io } from 'socket.io-client';
 import Cookies from 'js-cookie';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
+import { getBackendUrl } from './api';
+const SOCKET_URL = getBackendUrl();
 
 let socket = null;
 

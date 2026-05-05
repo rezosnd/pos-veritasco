@@ -141,9 +141,11 @@ async function seed() {
   const existingTables = await Table.countDocuments({ restaurant_id: restaurant._id });
   if (existingTables === 0) {
     const tables = [];
+    const crypto = require('crypto');
     for (let i = 1; i <= 10; i++) {
       const tableNumber = `T${i}`;
-      const qrUrl = `${FRONTEND_URL}/start?rid=${restaurant._id}&table=${tableNumber}`;
+      const qrToken = crypto.randomUUID();
+      const qrUrl = `${FRONTEND_URL}/${restaurant.slug}/menu?table=${tableNumber}&token=${qrToken}`;
       const qrCode = await QRCode.toDataURL(qrUrl, { width: 300, margin: 2 });
       tables.push({
         restaurant_id: restaurant._id,
@@ -153,6 +155,7 @@ async function seed() {
         section: i <= 5 ? 'Indoor' : 'Outdoor',
         qr_url: qrUrl,
         qr_code: qrCode,
+        qr_token: qrToken,
         status: 'inactive',
       });
     }
