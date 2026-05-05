@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const Session = require('../models/Session');
 const Table = require('../models/Table');
+const Menu = require('../models/Menu');
 const { authenticate, authorize } = require('../middleware/auth');
 const { ROLES, TABLE_STATUS, SESSION_STATUS } = require('../config/constants');
 
@@ -76,7 +77,31 @@ router.patch('/:sessionId/cart', async (req, res, next) => {
     if (!session || session.status !== SESSION_STATUS.ACTIVE) {
       return res.status(404).json({ success: false, message: 'Session not found or closed' });
     }
-    session.cart = cart;
+
+    // Enforce a reasonable cart size limit
+    if (cart.length > 100) {
+      return res.status(400).json({ success: false, message: 'Cart exceeds maximum item limit' });
+    }
+
+    // Look up authoritative prices from Menu DB — never trust client-supplied prices
+    const menuItemIds = cart.map(i => i.menu_item_id).filter(Boolean);
+    const menuDocs = await Menu.find({
+      _id: { $in: menuItemIds },
+      restaurant_id: session.restaurant_id,
+      is_available: true,
+    }).select('_id price').lean();
+    const menuMap = new Map(menuDocs.map(m => [m._id.toString(), m]));
+
+    const sanitizedCart = cart
+      .filter(item => menuMap.has(item.menu_item_id?.toString()))
+      .map(item => ({
+        ...item,
+        price: menuMap.get(item.menu_item_id.toString()).price,
+        quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
+      }));
+
+    const removedCount = cart.length - sanitizedCart.length;
+    session.cart = sanitizedCart;
     session.recalculate();
     await session.save();
     const io = req.app.get('io');
@@ -86,7 +111,11 @@ router.patch('/:sessionId/cart', async (req, res, next) => {
       gst_amount: session.gst_amount,
       total: session.total,
     });
-    res.json({ success: true, data: { cart: session.cart, total: session.total } });
+    const responseData = { cart: session.cart, total: session.total };
+    if (removedCount > 0) {
+      responseData.warning = `${removedCount} unavailable item(s) were removed from your cart.`;
+    }
+    res.json({ success: true, data: responseData });
   } catch (err) {
     next(err);
   }

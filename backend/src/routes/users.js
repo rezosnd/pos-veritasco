@@ -92,8 +92,8 @@ router.put('/:id', authenticate, async (req, res, next) => {
 router.patch('/:id/password', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.RESTAURANT_ADMIN), async (req, res, next) => {
   try {
     const { password } = req.body;
-    if (!password || password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    if (!password || password.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
     }
     const target = await User.findById(req.params.id);
     if (!target) return res.status(404).json({ success: false, message: 'User not found' });

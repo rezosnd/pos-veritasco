@@ -8,9 +8,12 @@ const logger = require('../utils/logger');
  * Handle all order-related socket events (primarily for KDS).
  */
 const handleOrderEvents = (io, socket) => {
-  // Kitchen updates order status
+  // Kitchen updates order status — requires authenticated staff
   socket.on(SOCKET_EVENTS.ORDER_STATUS_CHANGE, async (data) => {
     try {
+      if (!socket.user) {
+        return socket.emit(SOCKET_EVENTS.ERROR, { message: 'Authentication required' });
+      }
       const { order_id, status, note = '' } = data;
       if (!order_id || !status) {
         return socket.emit(SOCKET_EVENTS.ERROR, { message: 'order_id and status required' });
@@ -20,6 +23,11 @@ const handleOrderEvents = (io, socket) => {
       }
       const order = await Order.findById(order_id);
       if (!order) return socket.emit(SOCKET_EVENTS.ERROR, { message: 'Order not found' });
+      // Verify the user belongs to the same restaurant as the order
+      if (socket.user.role !== 'super_admin' &&
+          socket.user.restaurant_id?.toString() !== order.restaurant_id?.toString()) {
+        return socket.emit(SOCKET_EVENTS.ERROR, { message: 'Access denied' });
+      }
       order.status = status;
       order.status_history.push({
         status,
@@ -48,18 +56,32 @@ const handleOrderEvents = (io, socket) => {
     }
   });
 
-  // Subscribe to kitchen feed
+  // Subscribe to kitchen feed — requires authenticated staff belonging to the restaurant
   socket.on('subscribe-kitchen', (data) => {
+    if (!socket.user) {
+      return socket.emit(SOCKET_EVENTS.ERROR, { message: 'Authentication required' });
+    }
     const { restaurant_id } = data;
     if (!restaurant_id) return;
+    if (socket.user.role !== 'super_admin' &&
+        socket.user.restaurant_id?.toString() !== restaurant_id.toString()) {
+      return socket.emit(SOCKET_EVENTS.ERROR, { message: 'Access denied' });
+    }
     socket.join(`kitchen:${restaurant_id}`);
     logger.info(`Socket ${socket.id} subscribed to kitchen:${restaurant_id}`);
   });
 
-  // Subscribe to restaurant dashboard (waiter)
+  // Subscribe to restaurant dashboard — requires authenticated staff belonging to the restaurant
   socket.on('subscribe-restaurant', (data) => {
+    if (!socket.user) {
+      return socket.emit(SOCKET_EVENTS.ERROR, { message: 'Authentication required' });
+    }
     const { restaurant_id } = data;
     if (!restaurant_id) return;
+    if (socket.user.role !== 'super_admin' &&
+        socket.user.restaurant_id?.toString() !== restaurant_id.toString()) {
+      return socket.emit(SOCKET_EVENTS.ERROR, { message: 'Access denied' });
+    }
     socket.join(`restaurant:${restaurant_id}`);
     logger.info(`Socket ${socket.id} subscribed to restaurant:${restaurant_id}`);
   });

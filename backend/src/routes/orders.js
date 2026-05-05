@@ -1,10 +1,12 @@
 'use strict';
 
+const mongoose = require('mongoose');
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const Session = require('../models/Session');
 const Table = require('../models/Table');
+const Menu = require('../models/Menu');
 const { authenticate, authorize } = require('../middleware/auth');
 const { orderRateLimiter } = require('../middleware/rateLimiter');
 const { ROLES, ORDER_STATUS, TABLE_STATUS, SESSION_STATUS } = require('../config/constants');
@@ -13,18 +15,49 @@ const logger = require('../utils/logger');
 // POST /api/orders — Place new order (customer or waiter)
 router.post('/', orderRateLimiter, async (req, res, next) => {
   try {
-    const { session_id, items, placed_by = 'customer', kitchen_notes = '' } = req.body;
+    const { session_id, items, kitchen_notes = '' } = req.body;
     if (!session_id || !items?.length) {
       return res.status(400).json({ success: false, message: 'session_id and items are required' });
+    }
+    // Validate session_id is a proper ObjectId format to prevent malformed input errors
+    if (!mongoose.Types.ObjectId.isValid(session_id)) {
+      return res.status(400).json({ success: false, message: 'Invalid session_id' });
     }
     const session = await Session.findById(session_id).populate('table_id');
     if (!session || session.status !== SESSION_STATUS.ACTIVE) {
       return res.status(404).json({ success: false, message: 'Session not found or closed' });
     }
-    const orderItems = items.map(item => ({
-      ...item,
-      subtotal: Math.round(item.price * item.quantity * 100) / 100,
-    }));
+
+    // Determine placed_by server-side — never trust the client for this
+    const placed_by = req.user ? 'waiter' : 'customer';
+
+    // Fetch authoritative prices from Menu DB — never trust client-supplied prices
+    const menuItemIds = items.map(i => i.menu_item_id).filter(Boolean);
+    const menuDocs = await Menu.find({
+      _id: { $in: menuItemIds },
+      restaurant_id: session.restaurant_id,
+      is_available: true,
+    }).select('_id name price').lean();
+    const menuMap = new Map(menuDocs.map(m => [m._id.toString(), m]));
+
+    const orderItems = [];
+    for (const item of items) {
+      const menuItem = menuMap.get(item.menu_item_id?.toString());
+      if (!menuItem) {
+        return res.status(400).json({
+          success: false,
+          message: `Menu item not found or unavailable: ${item.menu_item_id}`,
+        });
+      }
+      const quantity = Math.max(1, Math.round(Number(item.quantity) || 1));
+      const subtotal = Math.round(menuItem.price * quantity * 100) / 100;
+      orderItems.push({
+        ...item,
+        price: menuItem.price,   // authoritative price from DB
+        quantity,
+        subtotal,
+      });
+    }
     const subtotal = orderItems.reduce((sum, i) => sum + i.subtotal, 0);
     const order = await Order.create({
       restaurant_id: session.restaurant_id,
