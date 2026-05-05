@@ -212,55 +212,57 @@ export default function BillPage({ params }) {
         )}
 
         {/* BILL TAB */}
-        {activeTab === 'bill' && (
-          <div className="space-y-4">
-            {/* Bill Summary */}
-            <div className="card p-5" id="bill-print-area">
-              {/* Restaurant header for print */}
-              <div className="text-center mb-4 pb-4 border-b border-[#1f1f1f]">
-                {logoUrl && <img src={logoUrl} alt="" className="w-12 h-12 rounded-xl object-cover mx-auto mb-2" />}
-                <p className="font-bold text-white text-lg">{restaurant?.name}</p>
-                {restaurant?.address?.street && <p className="text-xs text-[#555]">{restaurant.address.street}</p>}
-                {restaurant?.phone && <p className="text-xs text-[#555]">📞 {restaurant.phone}</p>}
-                <p className="text-xs text-[#555] mt-1">Table {tableNumber} · {new Date().toLocaleString()}</p>
-              </div>
-
-              {/* Consolidated items */}
-              <div className="space-y-2 mb-4">
-                <p className="text-xs font-semibold text-[#555] uppercase tracking-wider mb-2">Items</p>
-                {(bill?.items || []).map((item, i) => (
-                  <div key={i} className="flex justify-between text-sm">
-                    <span className="text-[#d4d4d8] flex-1">{item.name}</span>
-                    <span className="text-[#555] w-10 text-center">×{item.quantity}</span>
-                    <span className="text-white font-medium w-16 text-right">₹{item.subtotal}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Totals */}
-              <div className="border-t border-[#1f1f1f] pt-3 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#71717a]">Subtotal</span>
-                  <span className="text-white">₹{bill?.subtotal || 0}</span>
+        {activeTab === 'bill' && (() => {
+          const b = bill?.bill;
+          return (
+            <div className="space-y-4">
+              {/* Bill Summary */}
+              <div className="card p-5" id="bill-print-area">
+                {/* Restaurant header for print */}
+                <div className="text-center mb-4 pb-4 border-b border-[#1f1f1f]">
+                  {logoUrl && <img src={logoUrl} alt="" className="w-12 h-12 rounded-xl object-cover mx-auto mb-2" />}
+                  <p className="font-bold text-white text-lg">{restaurant?.name}</p>
+                  {restaurant?.address?.street && <p className="text-xs text-[#555]">{restaurant.address.street}</p>}
+                  {restaurant?.phone && <p className="text-xs text-[#555]">📞 {restaurant.phone}</p>}
+                  <p className="text-xs text-[#555] mt-1">Table {tableNumber} · {new Date().toLocaleString()}</p>
                 </div>
-                {(bill?.gst || 0) > 0 && (
+
+                {/* Consolidated items */}
+                <div className="space-y-2 mb-4">
+                  <p className="text-xs font-semibold text-[#555] uppercase tracking-wider mb-2">Items</p>
+                  {(bill?.items || []).map((item, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className="text-[#d4d4d8] flex-1">{item.name}</span>
+                      <span className="text-[#555] w-10 text-center">×{item.quantity}</span>
+                      <span className="text-white font-medium w-16 text-right">₹{item.subtotal}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Totals */}
+                <div className="border-t border-[#1f1f1f] pt-3 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#71717a]">GST ({bill?.gstPercent}%)</span>
-                    <span className="text-white">₹{bill?.gst || 0}</span>
+                    <span className="text-[#71717a]">Subtotal</span>
+                    <span className="text-white">₹{b?.subtotal || 0}</span>
                   </div>
-                )}
-                {(bill?.discount || 0) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-green-400">Discount</span>
-                    <span className="text-green-400">-₹{bill?.discount}</span>
+                  {(b?.gst || 0) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[#71717a]">GST ({b?.gstPercent}%)</span>
+                      <span className="text-white">₹{b?.gst || 0}</span>
+                    </div>
+                  )}
+                  {(b?.discount || 0) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-green-400">Discount</span>
+                      <span className="text-green-400">-₹{b?.discount}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-lg border-t border-[#1f1f1f] pt-2">
+                    <span className="text-white">Total</span>
+                    <span style={{ color: brand }}>₹{b?.total || 0}</span>
                   </div>
-                )}
-                <div className="flex justify-between font-bold text-lg border-t border-[#1f1f1f] pt-2">
-                  <span className="text-white">Total</span>
-                  <span style={{ color: brand }}>₹{bill?.total || 0}</span>
                 </div>
               </div>
-            </div>
 
             {/* Payment Options */}
             {user ? (
@@ -342,7 +344,7 @@ export default function BillPage({ params }) {
               </div>
             )}
           </div>
-        )}
+        )})()}
       </div>
 
       {/* Fixed Bottom Bar */}
