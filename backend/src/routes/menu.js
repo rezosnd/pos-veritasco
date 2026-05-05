@@ -23,11 +23,19 @@ router.get('/:restaurantId', async (req, res, next) => {
       .sort({ category: 1, sort_order: 1, createdAt: 1 })
       .lean();
 
-    // Build categories list
-    const allItems = await Menu.find({ restaurant_id: req.params.restaurantId, is_available: true })
-      .distinct('category');
+    // Build categories list (merge distinct with restaurant.categories)
+    const Restaurant = require('../models/Restaurant');
+    const rest = await Restaurant.findById(req.params.restaurantId).lean();
+    
+    const allItems = await Menu.find({ restaurant_id: req.params.restaurantId, is_available: true }).distinct('category');
+    
+    // Map categories to object with image
+    const finalCategories = allItems.map(c => {
+      const existing = rest?.categories?.find(rc => rc.name === c);
+      return { name: c, image: existing ? existing.image : null };
+    });
 
-    res.json({ success: true, data: { items, categories: allItems } });
+    res.json({ success: true, data: { items, categories: finalCategories } });
   } catch (err) {
     next(err);
   }
@@ -36,10 +44,19 @@ router.get('/:restaurantId', async (req, res, next) => {
 // GET /api/menu/:restaurantId/categories — Get categories only
 router.get('/:restaurantId/categories', async (req, res, next) => {
   try {
-    const categories = await Menu.find({
+    const Restaurant = require('../models/Restaurant');
+    const rest = await Restaurant.findById(req.params.restaurantId).lean();
+    
+    const allItems = await Menu.find({
       restaurant_id: req.params.restaurantId,
       is_available: true,
     }).distinct('category');
+    
+    const categories = allItems.map(c => {
+      const existing = rest?.categories?.find(rc => rc.name.toLowerCase() === c.toLowerCase());
+      return { name: c, image: existing ? existing.image : null };
+    });
+    
     res.json({ success: true, data: { categories } });
   } catch (err) {
     next(err);

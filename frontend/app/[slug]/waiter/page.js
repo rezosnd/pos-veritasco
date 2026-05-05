@@ -14,7 +14,7 @@ import useAuthStore from '@/store/authStore';
 // inactive | active | occupied | bill_requested
 const STATUS_STYLES = {
   inactive:       { bg:'bg-[#1a1a1a]',          text:'text-[#555]',       border:'border-[#2a2a2a]', dot:'bg-[#444]',    label:'Inactive' },
-  active:         { bg:'bg-green-500/10',         text:'text-green-400',    border:'border-green-500/30', dot:'bg-green-400', label:'Active' },
+  active:         { bg:'bg-blue-500/10',         text:'text-blue-400',    border:'border-blue-500/30', dot:'bg-blue-400', label:'Active' },
   occupied:       { bg:'bg-orange-500/10',        text:'text-orange-400',   border:'border-orange-500/30', dot:'bg-orange-400', label:'Occupied' },
   bill_requested: { bg:'bg-purple-500/10',        text:'text-purple-400',   border:'border-purple-500/30', dot:'bg-purple-400', label:'Bill Due' },
   // fallback aliases
@@ -121,8 +121,7 @@ export default function WaiterPage() {
     try {
       await billingApi.finalize(session._id);
       toast.success('Bill finalized!');
-      await load();
-      setSelected(null);
+      window.location.href = `/${restaurant.slug}/bill?session=${session._id}&table=${selected.table_number}&print=true`;
     } catch (e) { toast.error(e.message); }
   };
 
@@ -141,9 +140,14 @@ export default function WaiterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f]">
+    <div className="min-h-screen bg-[#0f0f0f] relative font-sans text-white">
+      {/* Background Setup */}
+      <div className="fixed inset-0 z-0 pointer-events-none" style={{ backgroundImage: "url('/posshome.png')", backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.15 }}></div>
+      <div className="fixed inset-0 z-0 bg-black/70 backdrop-blur-sm pointer-events-none"></div>
+
+      <div className="relative z-10 flex flex-col min-h-screen w-full">
       {/* Header */}
-      <header className="bg-[#111] border-b border-[#1f1f1f] px-4 py-3 flex items-center justify-between">
+      <header className="bg-[#111]/80 backdrop-blur-md border-b border-[#1f1f1f] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: brand }}>
             <Users size={15} className="text-white" />
@@ -156,11 +160,11 @@ export default function WaiterPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`flex items-center gap-1 text-xs ${connected ? 'text-green-400' : 'text-[#555]'}`}>
+          <span className={`flex items-center gap-1 text-xs ${connected ? 'text-blue-400' : 'text-[#555]'}`}>
             {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
           </span>
           <button onClick={load} className="text-[#71717a] hover:text-white p-1.5"><RefreshCw size={15} /></button>
-          <button onClick={() => { clearAuth(); router.push('/login'); }} className="text-[#71717a] hover:text-red-400 p-1.5"><LogOut size={15} /></button>
+          <button onClick={() => { clearAuth(); router.push('/login'); }} className="text-[#71717a] hover:text-slate-400 p-1.5"><LogOut size={15} /></button>
         </div>
       </header>
 
@@ -383,7 +387,7 @@ export default function WaiterPage() {
                       whileTap={{ scale: 0.97 }}
                       onClick={deactivate}
                       disabled={actLoading}
-                      className="w-full py-3.5 rounded-xl font-semibold text-red-400 border border-red-400/30 hover:bg-red-400/10 flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+                      className="w-full py-3.5 rounded-xl font-semibold text-slate-400 border border-slate-400/30 hover:bg-slate-400/10 flex items-center justify-center gap-2 transition-all disabled:opacity-60"
                     >
                       {actLoading
                         ? <><Loader2 size={16} className="animate-spin" /> Closing...</>
@@ -396,6 +400,7 @@ export default function WaiterPage() {
           </>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

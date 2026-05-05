@@ -114,8 +114,8 @@ export default function CartPage() {
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-2">
-                  <span className={`mt-0.5 w-4 h-4 shrink-0 rounded border-2 flex items-center justify-center ${item.type === 'veg' ? 'border-green-500' : 'border-red-500'}`}>
-                    <span className={`w-2 h-2 rounded-full ${item.type === 'veg' ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <span className={`mt-0.5 w-4 h-4 shrink-0 rounded border-2 flex items-center justify-center ${item.type === 'veg' ? 'border-blue-500' : 'border-slate-500'}`}>
+                    <span className={`w-2 h-2 rounded-full ${item.type === 'veg' ? 'bg-blue-500' : 'bg-slate-500'}`} />
                   </span>
                   <p className="font-medium text-white text-sm leading-tight">{item.name}</p>
                 </div>
@@ -127,7 +127,7 @@ export default function CartPage() {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => removeItem(item.menu_item_id)}
-                  className="w-8 h-8 rounded-xl border border-[#333] flex items-center justify-center text-[#a1a1aa] hover:border-red-400 hover:text-red-400 transition-all"
+                  className="w-8 h-8 rounded-xl border border-[#333] flex items-center justify-center text-[#a1a1aa] hover:border-slate-400 hover:text-slate-400 transition-all"
                 >
                   <Minus size={14} />
                 </button>

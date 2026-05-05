@@ -115,6 +115,10 @@ const restaurantSchema = new mongoose.Schema(
       plan: { type: String, enum: ['free', 'starter', 'pro', 'enterprise'], default: 'free' },
       expires_at: { type: Date, default: null },
     },
+    categories: [{
+      name: { type: String, required: true },
+      image: { type: String, default: null }
+    }],
   },
   {
     timestamps: true,

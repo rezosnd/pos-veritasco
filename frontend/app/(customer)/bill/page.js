@@ -14,9 +14,9 @@ const STATUS_CONFIG = {
   pending:   { label: 'Pending',   icon: Clock,        color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
   accepted:  { label: 'Accepted',  icon: CheckCircle2, color: 'text-blue-400',   bg: 'bg-blue-400/10' },
   preparing: { label: 'Preparing', icon: ChefHat,      color: 'text-orange-400', bg: 'bg-orange-400/10' },
-  ready:     { label: 'Ready',     icon: CheckCircle2, color: 'text-green-400',  bg: 'bg-green-400/10' },
-  served:    { label: 'Served',    icon: CheckCircle2, color: 'text-green-500',  bg: 'bg-green-500/10' },
-  cancelled: { label: 'Cancelled', icon: RefreshCw,    color: 'text-red-400',    bg: 'bg-red-400/10' },
+  ready:     { label: 'Ready',     icon: CheckCircle2, color: 'text-blue-400',  bg: 'bg-blue-400/10' },
+  served:    { label: 'Served',    icon: CheckCircle2, color: 'text-blue-500',  bg: 'bg-blue-500/10' },
+  cancelled: { label: 'Cancelled', icon: RefreshCw,    color: 'text-slate-400',    bg: 'bg-slate-400/10' },
 };
 
 export default function BillPage() {
@@ -110,7 +110,7 @@ export default function BillPage() {
           <h2 className="font-bold text-white text-xl font-display">{restaurant?.name}</h2>
           <p className="text-[#71717a] text-sm">Table {table}</p>
           {isPaid && (
-            <div className="mt-2 inline-flex items-center gap-1 text-green-400 text-sm bg-green-400/10 px-3 py-1 rounded-full">
+            <div className="mt-2 inline-flex items-center gap-1 text-blue-400 text-sm bg-blue-400/10 px-3 py-1 rounded-full">
               <CheckCircle2 size={14} /> Payment Confirmed
             </div>
           )}
@@ -156,8 +156,8 @@ export default function BillPage() {
               {items.map((item, i) => (
                 <div key={i} className="flex justify-between text-sm">
                   <div className="flex items-center gap-2">
-                    <span className={`w-3 h-3 rounded-sm border ${item.type === 'veg' ? 'border-green-500' : 'border-red-500'} flex items-center justify-center`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${item.type === 'veg' ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className={`w-3 h-3 rounded-sm border ${item.type === 'veg' ? 'border-blue-500' : 'border-slate-500'} flex items-center justify-center`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${item.type === 'veg' ? 'bg-blue-500' : 'bg-slate-500'}`} />
                     </span>
                     <span className="text-[#d4d4d8]">{item.name} × {item.quantity}</span>
                   </div>

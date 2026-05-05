@@ -3,6 +3,17 @@ import Cookies from 'js-cookie';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+export const getBackendUrl = () => {
+  let backend = API_URL.replace('/api', '');
+  if (typeof window !== 'undefined' && (backend.includes('localhost') || backend.includes('127.0.0.1'))) {
+    const currentHost = window.location.hostname;
+    if (currentHost !== 'localhost' && currentHost !== '127.0.0.1' && !currentHost.includes('0.0.0.0')) {
+      backend = backend.replace('localhost', currentHost).replace('127.0.0.1', currentHost);
+    }
+  }
+  return backend;
+};
+
 const api = axios.create({
   baseURL: API_URL,
   timeout: 15000,
@@ -126,6 +137,7 @@ export const paymentApi = {
 // ── Analytics ──────────────────────────────────────────────────────────────
 export const analyticsApi = {
   dashboard: (restaurantId) => api.get(`/analytics/${restaurantId}/dashboard`),
+  transactions: (restaurantId, params) => api.get(`/analytics/${restaurantId}/transactions`, { params }),
 };
 
 // ── Users ──────────────────────────────────────────────────────────────────

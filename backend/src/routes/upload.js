@@ -42,8 +42,7 @@ router.post('/image', authenticate, upload.single('image'), async (req, res, nex
       .webp({ quality: 82 })
       .toFile(outputPath);
 
-    const baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
-    const url = `${baseUrl}/uploads/${filename}`;
+    const url = `/uploads/${filename}`;
 
     res.json({ success: true, data: { url, filename } });
   } catch (err) {
@@ -64,8 +63,7 @@ router.post('/logo', authenticate, upload.single('image'), async (req, res, next
       .webp({ quality: 90 })
       .toFile(outputPath);
 
-    const baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
-    const url = `${baseUrl}/uploads/${filename}`;
+    const url = `/uploads/${filename}`;
 
     res.json({ success: true, data: { url, filename } });
   } catch (err) {

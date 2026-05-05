@@ -105,8 +105,8 @@ export default function StartPage() {
     ),
     blocked: (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
-        <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-6">
-          <ShieldAlert size={36} className="text-red-400" />
+        <div className="w-20 h-20 rounded-full bg-slate-500/20 flex items-center justify-center mx-auto mb-6">
+          <ShieldAlert size={36} className="text-slate-400" />
         </div>
         {errorMsg === 'table_inactive' ? (
           <>
@@ -121,7 +121,7 @@ export default function StartPage() {
             <p className="text-[#f5f5f5] font-medium mb-2">You must be inside the restaurant to order</p>
             {distance && (
               <p className="text-[#a1a1aa] text-sm">
-                You're approximately <span className="text-red-400 font-bold">{distance}m</span> away.
+                You're approximately <span className="text-slate-400 font-bold">{distance}m</span> away.
                 (Allowed: {restaurant?.geo_radius_meters || 100}m)
               </p>
             )}
@@ -131,8 +131,8 @@ export default function StartPage() {
     ),
     error: (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
-        <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-6">
-          <XCircle size={36} className="text-red-400" />
+        <div className="w-20 h-20 rounded-full bg-slate-500/20 flex items-center justify-center mx-auto mb-6">
+          <XCircle size={36} className="text-slate-400" />
         </div>
         <h2 className="text-xl font-bold text-white mb-3">Something went wrong</h2>
         <p className="text-[#a1a1aa] text-sm mb-6">{errorMsg}</p>
@@ -141,8 +141,8 @@ export default function StartPage() {
     ),
     success: (
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-        <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
-          <CheckCircle2 size={36} className="text-green-400" />
+        <div className="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-6">
+          <CheckCircle2 size={36} className="text-blue-400" />
         </div>
         <h2 className="text-xl font-bold text-white mb-2">Welcome to {restaurant?.name}!</h2>
         <p className="text-[#a1a1aa]">Taking you to the menu...</p>

@@ -156,8 +156,8 @@ export default function MenuPage() {
             </div>
             <div className="flex items-center gap-1">
               {connected
-                ? <Wifi size={14} className="text-green-400" />
-                : <WifiOff size={14} className="text-red-400" />}
+                ? <Wifi size={14} className="text-blue-400" />
+                : <WifiOff size={14} className="text-slate-400" />}
               <span className="text-xs text-[#71717a] hidden sm:block">{connected ? 'Live' : 'Offline'}</span>
             </div>
           </div>

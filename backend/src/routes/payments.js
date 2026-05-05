@@ -7,12 +7,15 @@ const Table = require('../models/Table');
 const { authenticate } = require('../middleware/auth');
 const { ROLES, SESSION_STATUS, TABLE_STATUS, PAYMENT_STATUS } = require('../config/constants');
 const logger = require('../utils/logger');
+const Order = require('../models/Order');
+const Restaurant = require('../models/Restaurant');
+const { calculateBill } = require('../utils/helpers');
 
 // POST /api/payments/:sessionId/confirm — Waiter confirms payment
 router.post('/:sessionId/confirm', authenticate, async (req, res, next) => {
   try {
     const { payment_method, payment_reference } = req.body;
-    const session = await Session.findById(req.params.sessionId);
+    const session = await Session.findById(req.params.sessionId).populate('order_ids');
     if (!session) return res.status(404).json({ success: false, message: 'Session not found' });
     if (req.user.role !== ROLES.SUPER_ADMIN && !req.user.belongsTo(session.restaurant_id)) {
       return res.status(403).json({ success: false, message: 'Access denied' });
@@ -20,6 +23,32 @@ router.post('/:sessionId/confirm', authenticate, async (req, res, next) => {
     if (session.payment_status === PAYMENT_STATUS.PAID) {
       return res.status(400).json({ success: false, message: 'Payment already confirmed' });
     }
+
+    if (session.status !== SESSION_STATUS.BILLED || !session.total) {
+      const restaurant = await Restaurant.findById(session.restaurant_id).select('gst_percent');
+      const gstPercent = restaurant?.gst_percent ?? 5;
+      const orderedItems = {};
+      (session.order_ids || []).forEach(order => {
+        if (!order.is_cancelled) {
+          order.items.forEach(item => {
+            const key = item.menu_item_id?.toString() || item.name;
+            if (orderedItems[key]) {
+              orderedItems[key].quantity += item.quantity;
+              orderedItems[key].subtotal += item.subtotal;
+            } else {
+              orderedItems[key] = { ...item.toObject ? item.toObject() : item };
+            }
+          });
+        }
+      });
+      const consolidatedItems = Object.values(orderedItems);
+      const bill = calculateBill(consolidatedItems, gstPercent);
+      session.subtotal = bill.subtotal;
+      session.gst_percent = bill.gstPercent;
+      session.gst_amount = bill.gst;
+      session.total = bill.total;
+    }
+
     session.payment_status = PAYMENT_STATUS.PAID;
     session.payment_method = payment_method || 'upi';
     session.payment_reference = payment_reference || null;

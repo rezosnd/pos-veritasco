@@ -37,12 +37,14 @@ const errorHandler = (err, req, res, next) => { // eslint-disable-line no-unused
     });
   }
 
-  // Mongoose duplicate key
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
+  // Mongoose duplicate key (single) or MongoBulkWriteError (bulk insertMany)
+  if (err.code === 11000 || err.name === 'MongoBulkWriteError') {
+    // keyValue may be undefined on bulk write errors — guard safely
+    const keyValue = err.keyValue || err.writeErrors?.[0]?.err?.keyValue || {};
+    const field = Object.keys(keyValue)[0] || 'field';
     return res.status(409).json({
       success: false,
-      message: `${field} already exists`,
+      message: `Duplicate value for ${field}. Please use a unique value.`,
     });
   }
 

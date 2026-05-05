@@ -36,6 +36,7 @@ router.get('/:restaurantId/dashboard', authenticate, async (req, res, next) => {
       activeTablesCount,
       topItems,
       revenueByDay,
+      recentTransactions,
     ] = await Promise.all([
       // Today's paid sessions
       Session.find({
@@ -86,7 +87,6 @@ router.get('/:restaurantId/dashboard', authenticate, async (req, res, next) => {
         { $sort: { totalQty: -1 } },
         { $limit: 5 },
       ]),
-      // Revenue last 7 days
       Session.aggregate([
         {
           $match: {
@@ -104,6 +104,15 @@ router.get('/:restaurantId/dashboard', authenticate, async (req, res, next) => {
         },
         { $sort: { _id: 1 } },
       ]),
+      // Recent transactions (latest 100)
+      Session.find({
+        restaurant_id: req.params.restaurantId,
+        payment_status: PAYMENT_STATUS.PAID,
+      })
+      .sort({ closed_at: -1 })
+      .limit(100)
+      .select('table_number customer_name customer_phone subtotal gst_amount discount total payment_method closed_at')
+      .lean(),
     ]);
 
     const todayRevenue = todaySessions.reduce((s, sess) => s + (sess.total || 0), 0);
@@ -121,8 +130,39 @@ router.get('/:restaurantId/dashboard', authenticate, async (req, res, next) => {
         total_menu_items: totalMenuItems,
         top_items: topItems,
         revenue_by_day: revenueByDay,
+        transactions: recentTransactions,
       },
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/analytics/:restaurantId/transactions — Detailed transaction history
+router.get('/:restaurantId/transactions', authenticate, async (req, res, next) => {
+  try {
+    if (req.user.role !== ROLES.SUPER_ADMIN && !req.user.belongsTo(req.params.restaurantId)) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
+    const { start, end } = req.query;
+    const query = {
+      restaurant_id: req.params.restaurantId,
+      payment_status: PAYMENT_STATUS.PAID,
+    };
+
+    if (start || end) {
+      query.closed_at = {};
+      if (start) query.closed_at.$gte = new Date(start);
+      if (end) query.closed_at.$lte = new Date(end);
+    }
+
+    const transactions = await Session.find(query)
+      .sort({ closed_at: -1 })
+      .select('table_number customer_name customer_phone subtotal gst_amount discount total payment_method closed_at')
+      .lean();
+
+    res.json({ success: true, data: { transactions } });
   } catch (err) {
     next(err);
   }

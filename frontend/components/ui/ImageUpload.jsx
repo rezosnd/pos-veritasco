@@ -2,10 +2,10 @@
 
 import { useState, useRef } from 'react';
 import { Upload, X, Loader2, ImageIcon } from 'lucide-react';
-import { uploadApi } from '@/lib/api';
+import { uploadApi, getBackendUrl } from '@/lib/api';
 import toast from 'react-hot-toast';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const BACKEND_URL = getBackendUrl();
 
 /**
  * ImageUpload — drag-drop or click-to-upload with preview.

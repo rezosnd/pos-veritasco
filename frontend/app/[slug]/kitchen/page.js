@@ -14,7 +14,7 @@ const COLS = [
   { key:'pending',   label:'Pending',   next:'accepted',  color:'#f59e0b' },
   { key:'accepted',  label:'Accepted',  next:'preparing', color:'#f97316' },
   { key:'preparing', label:'Preparing', next:'ready',     color:'#3b82f6' },
-  { key:'ready',     label:'Ready ✓',   next:'served',    color:'#22c55e' },
+  { key:'ready',     label:'Ready ✓',   next:'served',    color:'var(--brand-500)' },
 ];
 
 const ago = d => { const m=Math.floor((Date.now()-new Date(d))/60000); return m<1?'now':`${m}m ago`; };
@@ -67,9 +67,9 @@ export default function KitchenPage() {
           <div><p className="font-bold text-white text-sm">Kitchen Display — {restaurant?.name}</p><p className="text-[10px] text-[#71717a]">{orders.length} active orders</p></div>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`flex items-center gap-1 text-xs ${connected?'text-green-400':'text-red-400'}`}>{connected?<Wifi size={12}/>:<WifiOff size={12}/>}{connected?'Live':'Offline'}</span>
+          <span className={`flex items-center gap-1 text-xs ${connected?'text-blue-400':'text-slate-400'}`}>{connected?<Wifi size={12}/>:<WifiOff size={12}/>}{connected?'Live':'Offline'}</span>
           <button onClick={load} className="text-[#71717a] hover:text-white p-1"><RefreshCw size={15}/></button>
-          <button onClick={()=>{clearAuth();router.push('/login');}} className="text-[#71717a] hover:text-red-400 p-1"><LogOut size={15}/></button>
+          <button onClick={()=>{clearAuth();router.push('/login');}} className="text-[#71717a] hover:text-slate-400 p-1"><LogOut size={15}/></button>
         </div>
       </header>
       <div className="flex gap-3 p-4 flex-1 overflow-x-auto">
@@ -86,8 +86,8 @@ export default function KitchenPage() {
                   {colOrders.map(order => {
                     const mins = Math.floor((Date.now()-new Date(order.createdAt))/60000);
                     return (
-                      <motion.div key={order._id} layout initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,scale:0.9}} className="card p-3" style={mins>=15?{borderColor:'#ef4444'}:{}}>
-                        <div className="flex justify-between mb-1"><span className="font-bold text-white text-sm">{order.order_number}</span><span className={`text-xs ${mins>=15?'text-red-400':'text-[#71717a]'}`}>{ago(order.createdAt)}</span></div>
+                      <motion.div key={order._id} layout initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,scale:0.9}} className="card p-3" style={mins>=15?{borderColor:'#64748b'}:{}}>
+                        <div className="flex justify-between mb-1"><span className="font-bold text-white text-sm">{order.order_number}</span><span className={`text-xs ${mins>=15?'text-slate-400':'text-[#71717a]'}`}>{ago(order.createdAt)}</span></div>
                         <p className="text-xs font-medium mb-2" style={{color:col.color}}>Table {order.table_number}</p>
                         <div className="space-y-1 mb-3">{order.items?.map((item,i)=><div key={i} className="flex justify-between text-sm"><span className="text-[#d4d4d8]">{item.name}</span><span className="font-bold text-white">×{item.quantity}</span></div>)}</div>
                         {order.kitchen_notes && <p className="text-xs text-yellow-400 bg-yellow-400/10 rounded p-2 mb-2">📝 {order.kitchen_notes}</p>}
