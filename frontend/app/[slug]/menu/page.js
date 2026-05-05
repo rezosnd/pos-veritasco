@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Search, ShoppingCart, Plus, Minus, Star, Leaf, Flame, MapPin, Clock, Phone, Wifi, WifiOff, Receipt } from 'lucide-react';
+import { Search, ShoppingCart, Plus, Minus, Star, Leaf, Flame, MapPin, Clock, Phone, Wifi, WifiOff, Receipt, ShieldAlert } from 'lucide-react';
 import { menuApi, tableApi, sessionApi } from '@/lib/api';
 import { useRestaurant } from '@/lib/restaurantContext';
 import { connectSocket } from '@/lib/socket';
