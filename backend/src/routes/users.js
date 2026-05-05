@@ -31,7 +31,7 @@ router.post('/', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.RESTAURANT_ADM
     if (!name || !email || !password || !role) {
       return res.status(400).json({ success: false, message: 'name, email, password, role are required' });
     }
-    // Restaurant admin can only create waiter/kitchen for own restaurant
+    // Restaurant admin can only create waiter/kitchen for their own restaurant
     if (req.user.role === ROLES.RESTAURANT_ADMIN) {
       if (![ROLES.WAITER, ROLES.KITCHEN].includes(role)) {
         return res.status(403).json({ success: false, message: 'You can only create waiter or kitchen accounts' });
@@ -42,7 +42,10 @@ router.post('/', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.RESTAURANT_ADM
       email,
       password,
       role,
-      restaurant_id: restaurant_id || req.user.restaurant_id,
+      // Restaurant admin cannot override restaurant_id — always use their own
+      restaurant_id: req.user.role === ROLES.RESTAURANT_ADMIN
+        ? req.user.restaurant_id
+        : (restaurant_id || req.user.restaurant_id),
       phone,
     });
     res.status(201).json({ success: true, data: { user } });
@@ -118,8 +121,18 @@ router.patch('/:id/password', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.R
 // DELETE /api/users/:id
 router.delete('/:id', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.RESTAURANT_ADMIN), async (req, res, next) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const target = await User.findById(req.params.id);
+    if (!target) return res.status(404).json({ success: false, message: 'User not found' });
+    // Restaurant admin can only delete their own staff (not admins from other restaurants)
+    if (req.user.role === ROLES.RESTAURANT_ADMIN) {
+      if (target.restaurant_id?.toString() !== req.user.restaurant_id?.toString()) {
+        return res.status(403).json({ success: false, message: 'Access denied' });
+      }
+      if ([ROLES.SUPER_ADMIN, ROLES.RESTAURANT_ADMIN].includes(target.role)) {
+        return res.status(403).json({ success: false, message: 'Cannot delete admin accounts' });
+      }
+    }
+    await User.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'User deleted' });
   } catch (err) {
     next(err);

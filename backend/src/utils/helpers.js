@@ -1,5 +1,7 @@
 'use strict';
 
+const crypto = require('crypto');
+
 /**
  * Haversine formula to calculate distance between two coordinates in meters.
  */

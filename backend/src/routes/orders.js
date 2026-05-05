@@ -23,6 +23,8 @@ router.post('/', orderRateLimiter, async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(session_id)) {
       return res.status(400).json({ success: false, message: 'Invalid session_id' });
     }
+    // Cap kitchen_notes length
+    const safeKitchenNotes = String(kitchen_notes).slice(0, 500);
     const session = await Session.findById(session_id).populate('table_id');
     if (!session || session.status !== SESSION_STATUS.ACTIVE) {
       return res.status(404).json({ success: false, message: 'Session not found or closed' });
@@ -68,7 +70,7 @@ router.post('/', orderRateLimiter, async (req, res, next) => {
       subtotal: Math.round(subtotal * 100) / 100,
       placed_by,
       placed_by_user: req.user?._id || null,
-      kitchen_notes,
+      kitchen_notes: safeKitchenNotes,
     });
     // Add order to session
     session.order_ids.push(order._id);
@@ -103,11 +105,12 @@ router.get('/restaurant/:restaurantId', authenticate, async (req, res, next) => 
     const query = { restaurant_id: req.params.restaurantId };
     if (status) query.status = status;
     if (session_id) query.session_id = session_id;
+    const safeLimit = Math.min(parseInt(limit) || 50, 100);
     const [orders, total] = await Promise.all([
       Order.find(query)
         .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(parseInt(limit))
+        .skip((page - 1) * safeLimit)
+        .limit(safeLimit)
         .lean(),
       Order.countDocuments(query),
     ]);

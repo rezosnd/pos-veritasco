@@ -14,9 +14,11 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.memoryStorage(); // process in memory, then write via sharp
 
+const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) return cb(null, true);
-  cb(new Error('Only image files allowed'), false);
+  if (ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) return cb(null, true);
+  cb(new Error('Only JPEG, PNG, WebP, or GIF images are allowed'), false);
 };
 
 const upload = multer({
