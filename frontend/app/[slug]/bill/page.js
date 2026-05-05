@@ -63,7 +63,19 @@ export default function BillPage({ params }) {
     s.on('bill-finalized', () => { setBillRequested(true); loadBill(); toast.success('Your bill is ready!'); });
     s.on('order-placed', () => loadBill());
     s.on('order-updated', () => loadBill());
-    return () => { s.off('bill-finalized'); s.off('order-placed'); s.off('order-updated'); };
+    s.on('session-closed', () => {
+      toast.success('Session has ended. Redirecting...', { duration: 4000 });
+      useCartStore.getState().clearCart();
+      setTimeout(() => {
+        window.location.href = 'https://veritasco.tech';
+      }, 3000);
+    });
+    return () => { 
+      s.off('bill-finalized'); 
+      s.off('order-placed'); 
+      s.off('order-updated'); 
+      s.off('session-closed');
+    };
   }, [sessionId]);
 
   const requestBill = async () => {
@@ -120,6 +132,9 @@ export default function BillPage({ params }) {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-4">
 
         {/* ORDERS TAB */}
         {activeTab === 'orders' && (
@@ -229,73 +244,95 @@ export default function BillPage({ params }) {
             </div>
 
             {/* Payment Options */}
-            {!paid && (
-              <div className="card p-5 space-y-3">
-                <p className="text-sm font-semibold text-white mb-3">Pay Now</p>
+            {user ? (
+              <>
+                {!paid && (
+                  <div className="card p-5 space-y-3">
+                    <p className="text-sm font-semibold text-white mb-3">Pay Now</p>
 
-                {/* UPI QR Code */}
-                {bill?.upiUrl && (
-                  <div className="bg-white p-4 rounded-xl flex flex-col items-center justify-center mb-4 border-2" style={{ borderColor: brand }}>
-                    <p className="text-black font-bold text-xs mb-2 uppercase tracking-wide">Scan to Pay</p>
-                    <QRCodeSVG value={bill.upiUrl} size={150} level="M" />
-                    <p className="text-[#555] text-xs mt-2 font-medium">Any UPI App</p>
+                    {/* UPI QR Code */}
+                    {bill?.upiUrl && (
+                      <div className="bg-white p-4 rounded-xl flex flex-col items-center justify-center mb-4 border-2" style={{ borderColor: brand }}>
+                        <p className="text-black font-bold text-xs mb-2 uppercase tracking-wide">Scan to Pay</p>
+                        <QRCodeSVG value={bill.upiUrl} size={150} level="M" />
+                        <p className="text-[#555] text-xs mt-2 font-medium">Any UPI App</p>
+                      </div>
+                    )}
+
+                    {/* UPI Button */}
+                    {bill?.upiUrl && (
+                      <a href={bill.upiUrl}
+                        className="w-full py-3 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2"
+                        style={{ background: `linear-gradient(135deg, ${brand}, ${brand}cc)` }}>
+                        📱 Pay via UPI App — ₹{b?.total}
+                      </a>
+                    )}
+
+                    {/* WhatsApp */}
+                    {bill?.waUrl && (
+                      <a href={bill.waUrl} target="_blank" rel="noreferrer"
+                        className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white">
+                        <MessageCircle size={16} /> Send Bill on WhatsApp
+                      </a>
+                    )}
+
+                    {/* Print */}
+                    <button onClick={() => window.print()}
+                      className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 text-[#a1a1aa] border border-[#2a2a2a] hover:border-[#3a3a3a]">
+                      <Printer size={16} /> Print Bill
+                    </button>
                   </div>
                 )}
 
-                {/* UPI Button */}
-                {bill?.upiUrl && (
-                  <a href={bill.upiUrl}
-                    className="w-full py-3 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2"
-                    style={{ background: `linear-gradient(135deg, ${brand}, ${brand}cc)` }}>
-                    📱 Pay via UPI App — ₹{b?.total}
-                  </a>
+                {paid && (
+                  <div className="card p-5 text-center">
+                    <CheckCircle size={40} className="text-green-400 mx-auto mb-2" />
+                    <p className="font-bold text-green-400 text-lg">Payment Done!</p>
+                    <p className="text-[#555] text-sm">Thank you for dining with us 🙏</p>
+                  </div>
                 )}
-
-                {/* WhatsApp */}
-                {bill?.waUrl && (
-                  <a href={bill.waUrl} target="_blank" rel="noreferrer"
-                    className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white">
-                    <MessageCircle size={16} /> Send Bill on WhatsApp
-                  </a>
-                )}
-
-                {/* Print */}
-                <button onClick={() => window.print()}
-                  className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 text-[#a1a1aa] border border-[#2a2a2a] hover:border-[#3a3a3a]">
-                  <Printer size={16} /> Print Bill
-                </button>
-              </div>
-            )}
-
-            {paid && (
-              <div className="card p-5 text-center">
-                <CheckCircle size={40} className="text-green-400 mx-auto mb-2" />
-                <p className="font-bold text-green-400 text-lg">Payment Done!</p>
-                <p className="text-[#555] text-sm">Thank you for dining with us 🙏</p>
+              </>
+            ) : (
+              <div className="card p-6 text-center border border-dashed border-[#2a2a2a]">
+                <CheckCircle size={32} className="mx-auto mb-2" style={{ color: brand }} />
+                <p className="font-semibold text-white text-sm">Review Your Bill Details Above</p>
+                <p className="text-[#71717a] text-xs mt-1 max-w-sm mx-auto">
+                  To pay or settle your bill, please inform your waiter. They will present the payment QR code and settle the order on their terminal.
+                </p>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Request Bill + Reorder — Fixed Bottom Bar */}
+      {/* Fixed Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0f0f0f]/95 backdrop-blur-sm border-t border-[#1f1f1f]">
-        <div className="max-w-2xl mx-auto flex gap-3">
-          <button onClick={() => window.location.href = `/${restaurant?.slug}/menu?table=${tableNumber}`}
-            className="flex-1 py-3.5 rounded-xl font-semibold text-sm border transition-all"
-            style={{ borderColor: `${brand}44`, color: brand }}>
-            + Order More
-          </button>
-          {!billRequested ? (
-            <motion.button whileTap={{ scale: 0.97 }} onClick={requestBill} disabled={requesting}
-              className="flex-1 py-3.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2"
-              style={{ background: `linear-gradient(135deg, ${brand}, ${brand}cc)` }}>
-              {requesting ? <Loader2 size={14} className="animate-spin" /> : '🧾'} Request Bill
-            </motion.button>
-          ) : (
-            <div className="flex-1 py-3.5 rounded-xl font-bold text-center text-sm bg-green-500/10 border border-green-500/30 text-green-400">
-              ✅ Bill Requested
+        <div className="max-w-2xl mx-auto">
+          {user ? (
+            <div className="flex gap-3">
+              <button onClick={() => window.location.href = `/${restaurant?.slug}/menu?table=${tableNumber}`}
+                className="flex-1 py-3.5 rounded-xl font-semibold text-sm border transition-all"
+                style={{ borderColor: `${brand}44`, color: brand }}>
+                + Order More
+              </button>
+              {!billRequested ? (
+                <motion.button whileTap={{ scale: 0.97 }} onClick={requestBill} disabled={requesting}
+                  className="flex-1 py-3.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2"
+                  style={{ background: `linear-gradient(135deg, ${brand}, ${brand}cc)` }}>
+                  {requesting ? <Loader2 size={14} className="animate-spin" /> : '🧾'} Request Bill
+                </motion.button>
+              ) : (
+                <div className="flex-1 py-3.5 rounded-xl font-bold text-center text-sm bg-green-500/10 border border-green-500/30 text-green-400">
+                  ✅ Bill Requested
+                </div>
+              )}
             </div>
+          ) : (
+            <button onClick={() => window.location.href = `/${restaurant?.slug}/menu?table=${tableNumber}`}
+              className="w-full py-3.5 rounded-xl font-bold text-white text-sm text-center"
+              style={{ background: brand }}>
+              + Order More Items
+            </button>
           )}
         </div>
       </div>

@@ -40,6 +40,9 @@ router.post('/:sessionId/confirm', authenticate, async (req, res, next) => {
       payment_method: session.payment_method,
       total: session.total,
     });
+    io?.to(`session:${req.params.sessionId}`).emit('session-closed', {
+      session_id: session._id,
+    });
     io?.to(`restaurant:${session.restaurant_id}`).emit('session-closed', {
       session_id: session._id,
       table_id: session.table_id,

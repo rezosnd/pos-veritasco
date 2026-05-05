@@ -59,9 +59,18 @@ router.get('/:restaurantId/public/:tableNumber', async (req, res, next) => {
     
     if (!table) return res.status(404).json({ success: false, message: 'Table not found' });
     
-    // Strict QR Token Validation: token MUST match and be present
-    if (!token || !table.qr_token || table.qr_token !== token) {
-      return res.status(401).json({ success: false, message: 'Invalid QR Code. Please scan the newly generated QR code on your table.' });
+    // Determine if token validation is required
+    // Bypass if isStaff, or if ENFORCE_QR_TOKEN is explicitly set to 'false'
+    // Default to true in production, false in development
+    const isDev = process.env.NODE_ENV === 'development';
+    const enforceToken = process.env.ENFORCE_QR_TOKEN 
+      ? process.env.ENFORCE_QR_TOKEN === 'true' 
+      : !isDev; // Default to true in prod, false in dev
+
+    if (enforceToken && !isStaff) {
+      if (!token || !table.qr_token || table.qr_token !== token) {
+        return res.status(401).json({ success: false, message: 'Invalid QR Code. Please scan the newly generated QR code on your table.' });
+      }
     }
     
     // Remove token from response
@@ -100,9 +109,18 @@ router.post('/:restaurantId/public/:tableNumber/activate', async (req, res, next
     });
     if (!table) return res.status(404).json({ success: false, message: 'Table not found' });
     
-    // Strict QR Token Validation: token MUST match and be present
-    if (!token || !table.qr_token || table.qr_token !== token) {
-      return res.status(401).json({ success: false, message: 'Invalid QR Code. Please scan the newly generated QR code on your table.' });
+    // Determine if token validation is required
+    // Bypass if isStaff, or if ENFORCE_QR_TOKEN is explicitly set to 'false'
+    // Default to true in production, false in development
+    const isDev = process.env.NODE_ENV === 'development';
+    const enforceToken = process.env.ENFORCE_QR_TOKEN 
+      ? process.env.ENFORCE_QR_TOKEN === 'true' 
+      : !isDev; // Default to true in prod, false in dev
+
+    if (enforceToken && !isStaff) {
+      if (!token || !table.qr_token || table.qr_token !== token) {
+        return res.status(401).json({ success: false, message: 'Invalid QR Code. Please scan the newly generated QR code on your table.' });
+      }
     }
 
     // If already active/occupied, return existing session
@@ -239,8 +257,9 @@ router.post('/:restaurantId/:tableId/deactivate', authenticate, authorize(ROLES.
     const table = await Table.findOne({ _id: req.params.tableId, restaurant_id: req.params.restaurantId });
     if (!table) return res.status(404).json({ success: false, message: 'Table not found' });
     // Close active session
-    if (table.current_session_id) {
-      await Session.findByIdAndUpdate(table.current_session_id, {
+    const activeSessionId = table.current_session_id;
+    if (activeSessionId) {
+      await Session.findByIdAndUpdate(activeSessionId, {
         status: SESSION_STATUS.CLOSED,
         closed_at: new Date(),
       });
@@ -252,6 +271,9 @@ router.post('/:restaurantId/:tableId/deactivate', authenticate, authorize(ROLES.
     await table.save();
     const io = req.app.get('io');
     io?.to(`restaurant:${req.params.restaurantId}`).emit('table-deactivated', { table_id: table._id });
+    if (activeSessionId) {
+      io?.to(`session:${activeSessionId}`).emit('session-closed', { session_id: activeSessionId });
+    }
     res.json({ success: true, data: { table } });
   } catch (err) {
     next(err);

@@ -143,7 +143,17 @@ export default function MenuPage({ params }) {
     socket.on('cart-updated', (data) => {
       useCartStore.getState().setCart(data.cart);
     });
-    return () => { socket.off('cart-updated'); };
+    socket.on('session-closed', () => {
+      toast.success('Session has ended. Redirecting...', { duration: 4000 });
+      useCartStore.getState().clearCart();
+      setTimeout(() => {
+        window.location.href = 'https://veritasco.tech';
+      }, 3000);
+    });
+    return () => { 
+      socket.off('cart-updated'); 
+      socket.off('session-closed');
+    };
   }, [session?._id]);
 
   const filtered = menu.filter(item => {

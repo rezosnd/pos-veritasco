@@ -91,17 +91,23 @@ orderSchema.index({ restaurant_id: 1, createdAt: -1 });
 orderSchema.index({ session_id: 1, createdAt: 1 });
 orderSchema.index({ restaurant_id: 1, order_number: 1 }, { unique: true });
 
-// ─── Pre-save: generate order number ─────────────────────────────────────────
-orderSchema.pre('save', async function (next) {
-  if (this.isNew) {
-    const count = await mongoose.model('Order').countDocuments({
-      restaurant_id: this.restaurant_id,
-    });
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
-    this.order_number = `ORD-${dateStr}-${String(count + 1).padStart(4, '0')}`;
-    // Add initial status to history
-    this.status_history.push({ status: this.status });
+// ─── Pre-validate: generate order number ─────────────────────────────────────
+orderSchema.pre('validate', async function (next) {
+  if (this.isNew && !this.order_number) {
+    try {
+      const count = await mongoose.model('Order').countDocuments({
+        restaurant_id: this.restaurant_id,
+      });
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+      this.order_number = `ORD-${dateStr}-${String(count + 1).padStart(4, '0')}`;
+      // Add initial status to history if status_history is empty
+      if (this.status_history.length === 0) {
+        this.status_history.push({ status: this.status });
+      }
+    } catch (err) {
+      return next(err);
+    }
   }
   next();
 });

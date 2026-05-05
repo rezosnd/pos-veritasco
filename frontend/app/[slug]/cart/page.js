@@ -103,7 +103,7 @@ export default function CartPage({ params }) {
           <button onClick={() => router.push(`/${params.slug}/bill?session=${sessionId}&table=${tableNumber}`)}
             className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border"
             style={{ borderColor: `${brand}44`, color: brand }}>
-            <Receipt size={13} /> Orders & Bill
+            <Receipt size={13} /> My Orders
           </button>
         )}
       </div>
