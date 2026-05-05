@@ -88,6 +88,7 @@ router.patch('/:sessionId/cart', async (req, res, next) => {
     const menuDocs = await Menu.find({
       _id: { $in: menuItemIds },
       restaurant_id: session.restaurant_id,
+      is_available: true,
     }).select('_id price').lean();
     const menuMap = new Map(menuDocs.map(m => [m._id.toString(), m]));
 
@@ -99,6 +100,7 @@ router.patch('/:sessionId/cart', async (req, res, next) => {
         quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
       }));
 
+    const removedCount = cart.length - sanitizedCart.length;
     session.cart = sanitizedCart;
     session.recalculate();
     await session.save();
@@ -109,7 +111,7 @@ router.patch('/:sessionId/cart', async (req, res, next) => {
       gst_amount: session.gst_amount,
       total: session.total,
     });
-    res.json({ success: true, data: { cart: session.cart, total: session.total } });
+    res.json({ success: true, data: { cart: session.cart, total: session.total }, ...(removedCount > 0 && { warning: `${removedCount} unavailable item(s) were removed from your cart.` }) });
   } catch (err) {
     next(err);
   }

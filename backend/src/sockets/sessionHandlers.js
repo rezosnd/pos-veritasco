@@ -87,6 +87,7 @@ const handleSessionEvents = (io, socket) => {
       const menuDocs = await Menu.find({
         _id: { $in: menuItemIds },
         restaurant_id: session.restaurant_id,
+        is_available: true,
       }).select('_id price').lean();
       const menuMap = new Map(menuDocs.map(m => [m._id.toString(), m]));
 
@@ -98,6 +99,7 @@ const handleSessionEvents = (io, socket) => {
           quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
         }));
 
+      const removedCount = cart.length - sanitizedCart.length;
       session.cart = sanitizedCart;
       session.recalculate();
       await session.save();
@@ -107,6 +109,7 @@ const handleSessionEvents = (io, socket) => {
         subtotal: session.subtotal,
         gst_amount: session.gst_amount,
         total: session.total,
+        ...(removedCount > 0 && { warning: `${removedCount} unavailable item(s) were removed from your cart.` }),
       });
     } catch (err) {
       logger.error('cart-update error:', err);

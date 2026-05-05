@@ -1,5 +1,6 @@
 'use strict';
 
+const mongoose = require('mongoose');
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
@@ -17,6 +18,10 @@ router.post('/', orderRateLimiter, async (req, res, next) => {
     const { session_id, items, kitchen_notes = '' } = req.body;
     if (!session_id || !items?.length) {
       return res.status(400).json({ success: false, message: 'session_id and items are required' });
+    }
+    // Validate session_id is a proper ObjectId to avoid injection
+    if (!mongoose.Types.ObjectId.isValid(session_id)) {
+      return res.status(400).json({ success: false, message: 'Invalid session_id' });
     }
     const session = await Session.findById(session_id).populate('table_id');
     if (!session || session.status !== SESSION_STATUS.ACTIVE) {
