@@ -19,7 +19,9 @@ const STATUS_CONFIG = {
   cancelled: { label: 'Cancelled', icon: RefreshCw,    color: 'text-slate-400',    bg: 'bg-slate-400/10' },
 };
 
-export default function BillPage() {
+import { Suspense } from 'react';
+
+function BillPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const rid = searchParams.get('rid');
@@ -236,5 +238,17 @@ export default function BillPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function BillPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
+        <Loader2 className="animate-spin text-[#a1a1aa]" size={32} />
+      </div>
+    }>
+      <BillPageContent />
+    </Suspense>
   );
 }

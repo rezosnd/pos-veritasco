@@ -12,7 +12,9 @@ import ItemCard from '@/components/menu/ItemCard';
 import CategoryFilter from '@/components/menu/CategoryFilter';
 import FloatingCart from '@/components/cart/FloatingCart';
 
-export default function MenuPage() {
+import { Suspense } from 'react';
+
+function MenuPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const rid = searchParams.get('rid');
@@ -238,5 +240,17 @@ export default function MenuPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function MenuPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
+        <UtensilsCrossed size={32} className="text-[#333] animate-pulse" />
+      </div>
+    }>
+      <MenuPageContent />
+    </Suspense>
   );
 }
