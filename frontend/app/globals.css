@@ -1,0 +1,175 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Variables & Dynamic Brand Theming ────────────────────────────────── */
+:root {
+  --brand-color: #e85d04;
+  --brand-rgb: 232, 93, 4;
+  --brand-50: #fff7ed;
+  --brand-100: #ffedd5;
+  --brand-200: #fed7aa;
+  --brand-300: #fdba74;
+  --brand-400: #fb923c;
+  --brand-500: #f97316;
+  --brand-600: #ea580c;
+  --brand-700: #c2410c;
+  --brand-800: #9a3412;
+  --brand-900: #7c2d12;
+
+  --background: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface-2: #242424;
+  --surface-3: #2e2e2e;
+  --border: #333333;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
+}
+
+/* ── Base Styles ─────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--background);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar Styling ───────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Component Utilities ─────────────────────────────────────────────────── */
+@layer components {
+  /* Cards */
+  .card {
+    @apply bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-card;
+  }
+  .card-hover {
+    @apply card transition-all duration-300 hover:shadow-card-hover hover:border-[var(--brand-color)] hover:-translate-y-1;
+  }
+
+  /* Buttons */
+  .btn-brand {
+    @apply bg-[var(--brand-color)] text-white font-semibold py-3 px-6 rounded-xl
+           transition-all duration-200 hover:brightness-110 active:scale-95
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-outline {
+    @apply border-2 border-[var(--brand-color)] text-[var(--brand-color)] font-semibold
+           py-3 px-6 rounded-xl transition-all duration-200 hover:bg-[var(--brand-color)]
+           hover:text-white active:scale-95;
+  }
+  .btn-ghost {
+    @apply text-[var(--text-secondary)] font-medium py-2 px-4 rounded-xl
+           transition-all duration-200 hover:bg-[var(--surface-2)] active:scale-95;
+  }
+  .btn-danger {
+    @apply bg-[var(--error)] text-white font-semibold py-3 px-6 rounded-xl
+           transition-all duration-200 hover:brightness-110 active:scale-95;
+  }
+
+  /* Inputs */
+  .input {
+    @apply bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-primary)]
+           rounded-xl px-4 py-3 w-full outline-none transition-all duration-200
+           placeholder:text-[var(--text-muted)]
+           focus:border-[var(--brand-color)] focus:ring-2 focus:ring-[rgba(var(--brand-rgb),0.2)];
+  }
+
+  /* Badge */
+  .badge-veg {
+    @apply inline-flex items-center gap-1 text-xs font-medium text-green-400 bg-green-400/10
+           border border-green-400/30 px-2 py-0.5 rounded-full;
+  }
+  .badge-nonveg {
+    @apply inline-flex items-center gap-1 text-xs font-medium text-red-400 bg-red-400/10
+           border border-red-400/30 px-2 py-0.5 rounded-full;
+  }
+
+  /* Status badges */
+  .status-pending   { @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30; }
+  .status-preparing { @apply bg-orange-500/20 text-orange-400 border border-orange-500/30; }
+  .status-ready     { @apply bg-green-500/20 text-green-400 border border-green-500/30; }
+  .status-served    { @apply bg-blue-500/20 text-blue-400 border border-blue-500/30; }
+  .status-cancelled { @apply bg-red-500/20 text-red-400 border border-red-500/30; }
+
+  /* Glassmorphism */
+  .glass {
+    @apply backdrop-blur-md bg-white/5 border border-white/10;
+  }
+
+  /* Section */
+  .section-title {
+    @apply text-2xl font-bold font-display text-[var(--text-primary)];
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-[var(--border)] my-4;
+  }
+}
+
+/* ── Print Styles (Thermal Receipt 80mm) ────────────────────────────────── */
+@media print {
+  * { color: black !important; background: white !important; }
+  body { font-family: 'Courier New', monospace; font-size: 12px; }
+  .no-print { display: none !important; }
+  .print-receipt {
+    width: 80mm;
+    max-width: 80mm;
+    margin: 0 auto;
+    padding: 4mm;
+  }
+  .print-divider { border-top: 1px dashed #000; margin: 4px 0; }
+  @page { margin: 0; size: 80mm auto; }
+}
+
+/* ── Animation Utilities ─────────────────────────────────────────────────── */
+.animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+.animate-slide-up { animation: slideUp 0.3s ease-out; }
+.animate-bounce-subtle { animation: bounceSubtle 0.4s ease-out; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes bounceSubtle {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+
+/* ── Floating Cart Button ────────────────────────────────────────────────── */
+.floating-cart {
+  @apply fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+         flex items-center gap-3 px-6 py-4 rounded-2xl
+         shadow-float transition-all duration-300;
+  background: var(--brand-color);
+  min-width: 200px;
+}
+
+/* ── KDS Column Colors ───────────────────────────────────────────────────── */
+.kds-pending   { border-top: 3px solid var(--warning); }
+.kds-preparing { border-top: 3px solid #f97316; }
+.kds-ready     { border-top: 3px solid var(--success); }
