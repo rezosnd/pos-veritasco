@@ -19,7 +19,7 @@ router.post('/', orderRateLimiter, async (req, res, next) => {
     if (!session_id || !items?.length) {
       return res.status(400).json({ success: false, message: 'session_id and items are required' });
     }
-    // Validate session_id is a proper ObjectId to avoid injection
+    // Validate session_id is a proper ObjectId format to prevent malformed input errors
     if (!mongoose.Types.ObjectId.isValid(session_id)) {
       return res.status(400).json({ success: false, message: 'Invalid session_id' });
     }

@@ -111,7 +111,11 @@ router.patch('/:sessionId/cart', async (req, res, next) => {
       gst_amount: session.gst_amount,
       total: session.total,
     });
-    res.json({ success: true, data: { cart: session.cart, total: session.total }, ...(removedCount > 0 && { warning: `${removedCount} unavailable item(s) were removed from your cart.` }) });
+    const responseData = { cart: session.cart, total: session.total };
+    if (removedCount > 0) {
+      responseData.warning = `${removedCount} unavailable item(s) were removed from your cart.`;
+    }
+    res.json({ success: true, data: responseData });
   } catch (err) {
     next(err);
   }
