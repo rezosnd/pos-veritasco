@@ -53,9 +53,8 @@ export default function MenuPage({ params }) {
   useEffect(() => {
     if (!restaurant) return;
 
-    // Bypass geo: dev mode OR explicit env flag
-    const bypassGeo = process.env.NODE_ENV === 'development'
-      || process.env.NEXT_PUBLIC_BYPASS_GEO === 'true';
+    // Bypass geo: only if explicit environment flag NEXT_PUBLIC_BYPASS_GEO is set to true
+    const bypassGeo = process.env.NEXT_PUBLIC_BYPASS_GEO === 'true';
 
     if (bypassGeo) {
       setGeoState('ok');
@@ -71,9 +70,8 @@ export default function MenuPage({ params }) {
     validateLocation(restaurant.latitude, restaurant.longitude, restaurant.geo_radius_meters || 100)
       .then(result => {
         if (result.error) {
-          // Can't get location (denied / unsupported) — allow but warn
-          console.warn('Geo check skipped:', result.error);
-          setGeoState('skipped');
+          toast.error(result.error, { duration: 6000 });
+          setGeoState('error');
         } else if (result.allowed) {
           setGeoState('ok');
         } else {
@@ -81,13 +79,16 @@ export default function MenuPage({ params }) {
           setGeoState('denied');
         }
       })
-      .catch(() => setGeoState('skipped')); // Any error → skip gracefully
+      .catch((err) => {
+        toast.error('Location verification failed. Please ensure location services are enabled.');
+        setGeoState('error');
+      });
   }, [restaurant]);
 
   // ── Load table + menu (always load menu, even if table inactive) ────────────
   useEffect(() => {
     if (!restaurant || !tableNumber) return;
-    if (!['ok', 'skipped'].includes(geoState)) return; // don't load if denied or still checking
+    if (geoState !== 'ok') return; // don't load if denied, error, or still checking
 
     Promise.all([
       tableApi.getPublic(restaurant._id, tableNumber, token),
@@ -191,14 +192,38 @@ export default function MenuPage({ params }) {
     );
   }
 
-  // 'skipped' = geo unavailable/denied — allow menu access but show soft warning
-  // 'denied' = user is confirmed outside restaurant
+  // 'denied' = user is confirmed outside restaurant boundary
   if (geoState === 'denied') {
     return (
       <div className="min-h-screen bg-[#0f0f0f] flex flex-col items-center justify-center gap-4 p-6 text-center">
-        <MapPin size={48} className="text-red-400" />
-        <h1 className="text-2xl font-bold text-white">Outside Restaurant</h1>
-        <p className="text-[#71717a]">You must be inside {restaurant?.name} to access the menu.</p>
+        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center animate-bounce">
+          <MapPin size={32} className="text-red-500" />
+        </div>
+        <h1 className="text-2xl font-bold text-white">Outside Restaurant Boundary</h1>
+        <p className="text-[#a1a1aa] text-sm max-w-xs">
+          You must be inside <span className="text-white font-semibold">{restaurant?.name}</span> to access the menu and place orders.
+        </p>
+        <button onClick={() => window.location.reload()} className="px-6 py-2.5 rounded-xl font-bold text-white text-xs mt-4 hover:opacity-90 transition-opacity" style={{ background: brand }}>
+          Retry Location Verification
+        </button>
+      </div>
+    );
+  }
+
+  // 'error' = GPS disabled, or customer denied location permissions
+  if (geoState === 'error') {
+    return (
+      <div className="min-h-screen bg-[#0f0f0f] flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center">
+          <ShieldAlert size={32} className="text-yellow-500" />
+        </div>
+        <h1 className="text-2xl font-bold text-white">Location Permission Required</h1>
+        <p className="text-[#a1a1aa] text-sm max-w-xs">
+          Please allow location permissions for this website or enable your mobile GPS to place orders.
+        </p>
+        <button onClick={() => window.location.reload()} className="px-6 py-2.5 rounded-xl font-bold text-white text-xs mt-4 hover:opacity-90 transition-opacity" style={{ background: brand }}>
+          Enable GPS & Retry
+        </button>
       </div>
     );
   }

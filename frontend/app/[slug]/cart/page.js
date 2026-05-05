@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Minus, Trash2, ShoppingBag, Loader2, MessageSquare, Re
 import { orderApi, sessionApi } from '@/lib/api';
 import { useRestaurant } from '@/lib/restaurantContext';
 import useCartStore from '@/store/cartStore';
+import { validateLocation } from '@/lib/geo';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
@@ -42,6 +43,18 @@ export default function CartPage({ params }) {
 
     setPlacing(true);
     try {
+      // Geofence double-check
+      const bypassGeo = process.env.NEXT_PUBLIC_BYPASS_GEO === 'true';
+      if (!bypassGeo && restaurant.latitude && restaurant.longitude) {
+        const geo = await validateLocation(restaurant.latitude, restaurant.longitude, restaurant.geo_radius_meters || 100);
+        if (geo.error) {
+          throw new Error(`Location verification required: ${geo.error}`);
+        }
+        if (!geo.allowed) {
+          throw new Error(`You are currently too far (${geo.distance}m) from ${restaurant.name} to place an order. Please be inside the premises to order.`);
+        }
+      }
+
       let sid = currentSession;
       if (!sid) {
         // Table might have been activated — get session
