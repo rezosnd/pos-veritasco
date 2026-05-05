@@ -89,6 +89,35 @@ export default function AdminPage({ params }) {
     load();
   };
 
+  const exportCSV = (data, filename) => {
+    if (!data || data.length === 0) {
+      toast.error('No analytics data available to export yet!');
+      return;
+    }
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    if (filename.includes('sales_revenue')) {
+      csvContent += "Date,Revenue,Transactions\n";
+      data.forEach(row => {
+        csvContent += `${row._id},${row.revenue},${row.sessions}\n`;
+      });
+    } else if (filename.includes('top_selling_items')) {
+      csvContent += "Item Name,Quantity Sold,Total Revenue (INR)\n";
+      data.forEach(row => {
+        csvContent += `"${row.name.replace(/"/g, '""')}",${row.totalQty},${row.totalRevenue}\n`;
+      });
+    }
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Report exported successfully!');
+  };
+
   // ── Logo save ──────────────────────────────────────────────────────────────
   const saveLogo = async (url) => {
     await restaurantApi.update(restaurant._id, { logo: url });
@@ -137,25 +166,154 @@ export default function AdminPage({ params }) {
       <main className="ml-56 flex-1 p-6">
         {/* DASHBOARD */}
         {tab === 'dashboard' && (
-          <div>
-            <h2 className="text-2xl font-bold text-white font-display mb-6">Dashboard</h2>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-white font-display">Analytics Dashboard</h2>
+                <p className="text-xs text-[#71717a] mt-0.5">Real-time sales, insights, and report exports for {restaurant?.name}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => exportCSV(stats?.revenue_by_day || [], 'sales_revenue_history')}
+                  className="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#252525] rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+                >
+                  📥 Export Sales (CSV)
+                </button>
+                <button
+                  onClick={() => exportCSV(stats?.top_items || [], 'top_selling_items')}
+                  className="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#252525] rounded-xl text-xs font-semibold text-white transition-all flex items-center gap-1.5"
+                >
+                  📥 Export Top Items (CSV)
+                </button>
+              </div>
+            </div>
+
+            {/* Sales Revenue Performance Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { l: "Today's Revenue", v: `₹${stats?.todayRevenue || 0}`, c: '#22c55e' },
-                { l: 'Active Tables', v: stats?.activeTables || 0, c: brand },
-                { l: 'Total Orders', v: stats?.todayOrders || 0, c: '#f59e0b' },
-                { l: 'Menu Items', v: menu.length, c: '#8b5cf6' },
+                { l: "Today's Sale", v: `₹${stats?.todayRevenue || 0}`, d: "Live today's collections", c: '#10b981' },
+                { l: "This Week's Sale", v: `₹${stats?.weekRevenue || 0}`, d: "Rolling last 7 days", c: '#f59e0b' },
+                { l: "This Month's Sale", v: `₹${stats?.monthRevenue || 0}`, d: "Rolling last 30 days", c: '#8b5cf6' },
+                { l: 'Active Tables', v: stats?.activeTables || 0, d: "Currently dining guests", c: brand },
               ].map(s => (
-                <div key={s.l} className="card p-5">
-                  <p className="text-[#71717a] text-sm">{s.l}</p>
-                  <p className="text-3xl font-bold font-display mt-1" style={{ color: s.c }}>{s.v}</p>
+                <div key={s.l} className="card p-5 relative overflow-hidden border-t-4" style={{ borderTopColor: s.c }}>
+                  <p className="text-[#71717a] text-xs font-medium uppercase tracking-wider">{s.l}</p>
+                  <p className="text-3xl font-extrabold font-display mt-2 text-white">{s.v}</p>
+                  <p className="text-[10px] text-[#555] mt-1 font-medium">{s.d}</p>
                 </div>
               ))}
             </div>
+
+            {/* Secondary Operational Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="card p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[#71717a] text-xs font-medium uppercase">Today's Total Orders</p>
+                  <p className="text-2xl font-bold mt-1 text-white">{stats?.todayOrders || 0}</p>
+                </div>
+                <span className="text-xs font-semibold px-2.5 py-1 bg-[#3b82f6]/10 text-[#3b82f6] rounded-full">Active</span>
+              </div>
+              <div className="card p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[#71717a] text-xs font-medium uppercase">Total Active Menu Items</p>
+                  <p className="text-2xl font-bold mt-1 text-white">{menu.length}</p>
+                </div>
+                <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded-full">Online</span>
+              </div>
+            </div>
+
+            {/* Detailed Analytics Insights Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Daily Sales History Table */}
+              <div className="card p-5 lg:col-span-7">
+                <div className="flex items-center justify-between mb-4 border-b border-[#1f1f1f] pb-3">
+                  <div>
+                    <h3 className="font-bold text-white text-sm uppercase tracking-wide">Daily Sales History</h3>
+                    <p className="text-[10px] text-[#71717a] mt-0.5">Summary of transactions from the past 7 days</p>
+                  </div>
+                  <button
+                    onClick={() => exportCSV(stats?.revenue_by_day || [], 'sales_revenue_history')}
+                    className="text-xs text-zinc-400 hover:text-white transition-colors"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="text-[#71717a] uppercase tracking-wider border-b border-[#1f1f1f] pb-2">
+                        <th className="pb-2 font-semibold">Date</th>
+                        <th className="pb-2 font-semibold text-center">Transactions</th>
+                        <th className="pb-2 font-semibold text-right">Revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#1f1f1f]">
+                      {(!stats?.revenue_by_day || stats.revenue_by_day.length === 0) ? (
+                        <tr>
+                          <td colSpan="3" className="text-center py-8 text-[#555]">No sales history found</td>
+                        </tr>
+                      ) : (
+                        stats.revenue_by_day.map(day => (
+                          <tr key={day._id} className="hover:bg-[#1a1a1a]/50 transition-colors">
+                            <td className="py-2.5 font-medium text-white">{day._id}</td>
+                            <td className="py-2.5 text-center text-zinc-300 font-semibold">{day.sessions} sales</td>
+                            <td className="py-2.5 text-right font-bold text-emerald-400">₹{day.revenue}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Top Selling Items Table */}
+              <div className="card p-5 lg:col-span-5">
+                <div className="flex items-center justify-between mb-4 border-b border-[#1f1f1f] pb-3">
+                  <div>
+                    <h3 className="font-bold text-white text-sm uppercase tracking-wide">🏆 Best Sellers</h3>
+                    <p className="text-[10px] text-[#71717a] mt-0.5">Top performing items in the last 30 days</p>
+                  </div>
+                  <button
+                    onClick={() => exportCSV(stats?.top_items || [], 'top_selling_items')}
+                    className="text-xs text-zinc-400 hover:text-white transition-colors"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {(!stats?.top_items || stats.top_items.length === 0) ? (
+                    <p className="text-center py-8 text-xs text-[#555]">No sales data recorded yet</p>
+                  ) : (
+                    stats.top_items.map((item, idx) => (
+                      <div key={item._id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#1a1a1a]/40 hover:bg-[#1a1a1a]/80 transition-colors border border-[#1f1f1f]">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="w-5 h-5 rounded bg-zinc-800 text-zinc-400 font-bold text-[10px] flex items-center justify-center">#{idx+1}</span>
+                          <p className="font-semibold text-white text-xs truncate">{item.name}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-[10px] text-zinc-400 font-bold">{item.totalQty} sold</p>
+                          <p className="text-xs font-bold text-emerald-400 mt-0.5">₹{item.totalRevenue}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick References Card */}
             <div className="card p-5">
-              <p className="text-[#71717a] text-sm mb-2">Your Login URL</p>
-              <p className="font-mono text-sm text-white">{typeof window !== 'undefined' ? window.location.origin : ''}/login</p>
-              <p className="text-[#71717a] text-xs mt-2">Share with staff. QR customer link: <span className="text-white">/{restaurant?.slug}/menu?table=T1</span></p>
+              <p className="text-[#71717a] text-xs font-bold uppercase tracking-wider mb-2">Operational Access URLs</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                <div className="p-3 bg-[#131313] border border-[#1f1f1f] rounded-xl">
+                  <p className="text-[10px] text-[#555] font-bold uppercase">Staff Terminal Portal</p>
+                  <p className="font-mono text-xs text-white mt-1 select-all">{typeof window !== 'undefined' ? window.location.origin : ''}/login</p>
+                </div>
+                <div className="p-3 bg-[#131313] border border-[#1f1f1f] rounded-xl">
+                  <p className="text-[10px] text-[#555] font-bold uppercase">Active Customer QR Destination Example</p>
+                  <p className="font-mono text-xs text-white mt-1 select-all">{typeof window !== 'undefined' ? window.location.origin : ''}/{restaurant?.slug}/menu?table=T1</p>
+                </div>
+              </div>
             </div>
           </div>
         )}

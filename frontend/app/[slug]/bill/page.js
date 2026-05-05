@@ -97,6 +97,74 @@ export default function BillPage({ params }) {
     };
   }, [sessionId]);
 
+  const loadScriptsAndGenerate = async (type) => {
+    toast.loading('Generating invoice file...', { id: 'whatsapp-share' });
+    try {
+      if (!window.html2canvas) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+
+      if (type === 'pdf' && !window.jspdf) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+
+      const element = document.getElementById('bill-print-area');
+      if (!element) throw new Error('Receipt preview element not found');
+
+      const canvas = await window.html2canvas(element, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+      });
+
+      if (type === 'pdf') {
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: [80, 150 + (orders.length * 12)]
+        });
+        
+        const imgWidth = 80;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.save(`Bill_${tableNumber || 'Table'}.pdf`);
+        
+        toast.success('PDF generated and downloaded successfully!', { id: 'whatsapp-share' });
+      } else {
+        const imgUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `Bill_${tableNumber || 'Table'}.png`;
+        link.href = imgUrl;
+        link.click();
+        
+        toast.success('Receipt image downloaded successfully!', { id: 'whatsapp-share' });
+      }
+
+      const waUrl = bill?.waUrl || `https://wa.me/?text=Hi, here is your bill for Table ${tableNumber}! Please attach the downloaded receipt file.`;
+      window.open(waUrl, '_blank');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to generate file. Sharing invoice link...', { id: 'whatsapp-share' });
+      const waUrl = bill?.waUrl || `https://wa.me/?text=Hi, here is your bill for Table ${tableNumber}!`;
+      window.open(waUrl, '_blank');
+    }
+  };
+
   const requestBill = async () => {
     if (!sessionId) return;
     setRequesting(true);
@@ -297,10 +365,20 @@ export default function BillPage({ params }) {
 
                     {/* WhatsApp */}
                     {bill?.waUrl && (
-                      <a href={bill.waUrl} target="_blank" rel="noreferrer"
-                        className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white">
-                        <MessageCircle size={16} /> Send Bill on WhatsApp
-                      </a>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => loadScriptsAndGenerate('pdf')}
+                          className="flex-1 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white transition-all shadow-md"
+                        >
+                          <MessageCircle size={14} /> Send PDF on WA
+                        </button>
+                        <button
+                          onClick={() => loadScriptsAndGenerate('image')}
+                          className="flex-1 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-md"
+                        >
+                          <MessageCircle size={14} /> Send Image on WA
+                        </button>
+                      </div>
                     )}
 
                     {/* Print */}

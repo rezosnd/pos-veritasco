@@ -5,6 +5,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 const Session = require('../models/Session');
 const Menu = require('../models/Menu');
+const Table = require('../models/Table');
 const { authenticate } = require('../middleware/auth');
 const { ROLES, PAYMENT_STATUS } = require('../config/constants');
 
@@ -14,15 +15,25 @@ router.get('/:restaurantId/dashboard', authenticate, async (req, res, next) => {
     if (req.user.role !== ROLES.SUPER_ADMIN && !req.user.belongsTo(req.params.restaurantId)) {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(today);
-    todayEnd.setHours(23, 59, 59, 999);
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const startOf7DaysAgo = new Date();
+    startOf7DaysAgo.setDate(startOf7DaysAgo.getDate() - 7);
+    startOf7DaysAgo.setHours(0, 0, 0, 0);
+
+    const startOf30DaysAgo = new Date();
+    startOf30DaysAgo.setDate(startOf30DaysAgo.getDate() - 30);
+    startOf30DaysAgo.setHours(0, 0, 0, 0);
 
     const [
       todaySessions,
+      weekSessions,
+      monthSessions,
       todayOrders,
       totalMenuItems,
+      activeTablesCount,
       topItems,
       revenueByDay,
     ] = await Promise.all([
@@ -30,22 +41,36 @@ router.get('/:restaurantId/dashboard', authenticate, async (req, res, next) => {
       Session.find({
         restaurant_id: req.params.restaurantId,
         payment_status: PAYMENT_STATUS.PAID,
-        closed_at: { $gte: today, $lte: todayEnd },
-      }).lean(),
+        closed_at: { $gte: startOfToday },
+      }).select('total').lean(),
+      // Week's paid sessions
+      Session.find({
+        restaurant_id: req.params.restaurantId,
+        payment_status: PAYMENT_STATUS.PAID,
+        closed_at: { $gte: startOf7DaysAgo },
+      }).select('total').lean(),
+      // Month's paid sessions
+      Session.find({
+        restaurant_id: req.params.restaurantId,
+        payment_status: PAYMENT_STATUS.PAID,
+        closed_at: { $gte: startOf30DaysAgo },
+      }).select('total').lean(),
       // Today's orders
       Order.countDocuments({
         restaurant_id: req.params.restaurantId,
-        createdAt: { $gte: today, $lte: todayEnd },
+        createdAt: { $gte: startOfToday },
         is_cancelled: false,
       }),
       // Total menu items
       Menu.countDocuments({ restaurant_id: req.params.restaurantId, is_available: true }),
+      // Active tables count
+      Table.countDocuments({ restaurant_id: req.params.restaurantId, status: 'active' }),
       // Top 5 items (last 30 days)
       Order.aggregate([
         {
           $match: {
             restaurant_id: req.params.restaurantId,
-            createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+            createdAt: { $gte: startOf30DaysAgo },
             is_cancelled: false,
           },
         },
@@ -67,7 +92,7 @@ router.get('/:restaurantId/dashboard', authenticate, async (req, res, next) => {
           $match: {
             restaurant_id: req.params.restaurantId,
             payment_status: PAYMENT_STATUS.PAID,
-            closed_at: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+            closed_at: { $gte: startOf7DaysAgo },
           },
         },
         {
@@ -82,17 +107,17 @@ router.get('/:restaurantId/dashboard', authenticate, async (req, res, next) => {
     ]);
 
     const todayRevenue = todaySessions.reduce((s, sess) => s + (sess.total || 0), 0);
-    const avgOrderValue = todaySessions.length > 0 ? todayRevenue / todaySessions.length : 0;
+    const weekRevenue = weekSessions.reduce((s, sess) => s + (sess.total || 0), 0);
+    const monthRevenue = monthSessions.reduce((s, sess) => s + (sess.total || 0), 0);
 
     res.json({
       success: true,
       data: {
-        today: {
-          revenue: Math.round(todayRevenue * 100) / 100,
-          sessions: todaySessions.length,
-          orders: todayOrders,
-          avg_order_value: Math.round(avgOrderValue * 100) / 100,
-        },
+        todayRevenue: Math.round(todayRevenue * 100) / 100,
+        weekRevenue: Math.round(weekRevenue * 100) / 100,
+        monthRevenue: Math.round(monthRevenue * 100) / 100,
+        activeTables: activeTablesCount,
+        todayOrders,
         total_menu_items: totalMenuItems,
         top_items: topItems,
         revenue_by_day: revenueByDay,
