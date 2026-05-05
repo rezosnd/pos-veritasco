@@ -44,7 +44,7 @@ router.get('/:restaurantId/public/:tableNumber', async (req, res, next) => {
       const jwtToken = authHeader.split(' ')[1];
       try {
         const jwt = require('jsonwebtoken');
-        jwt.verify(jwtToken, process.env.JWT_SECRET || 'secret');
+        jwt.verify(jwtToken, process.env.JWT_SECRET);
         isStaff = true;
       } catch (e) {
         // invalid token, treat as public
@@ -95,7 +95,7 @@ router.post('/:restaurantId/public/:tableNumber/activate', async (req, res, next
       const jwtToken = authHeader.split(' ')[1];
       try {
         const jwt = require('jsonwebtoken');
-        jwt.verify(jwtToken, process.env.JWT_SECRET || 'secret');
+        jwt.verify(jwtToken, process.env.JWT_SECRET);
         isStaff = true;
       } catch (e) {
         // invalid token, treat as public

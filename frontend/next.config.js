@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
 const path = require('path');
+
+// Derive the backend hostname from the env var so we can scope image optimization
+// to just the domains we actually serve images from.
+const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+let backendHostname = 'localhost';
+try {
+  backendHostname = new URL(backendUrl).hostname;
+} catch { /* keep default */ }
+
 const nextConfig = {
   reactStrictMode: true,
   images: {
@@ -13,7 +22,8 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: backendHostname,
+        pathname: '/uploads/**',
       },
     ],
   },

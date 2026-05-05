@@ -2,6 +2,7 @@
 
 const Session = require('../models/Session');
 const Table = require('../models/Table');
+const Menu = require('../models/Menu');
 const { SESSION_STATUS, SOCKET_EVENTS, TABLE_STATUS } = require('../config/constants');
 const logger = require('../utils/logger');
 
@@ -72,11 +73,32 @@ const handleSessionEvents = (io, socket) => {
       if (!session_id || !Array.isArray(cart)) {
         return socket.emit(SOCKET_EVENTS.ERROR, { message: 'session_id and cart array required' });
       }
+      // Enforce a reasonable cart size limit
+      if (cart.length > 100) {
+        return socket.emit(SOCKET_EVENTS.ERROR, { message: 'Cart exceeds maximum item limit' });
+      }
       const session = await Session.findById(session_id);
       if (!session || session.status !== SESSION_STATUS.ACTIVE) {
         return socket.emit(SOCKET_EVENTS.ERROR, { message: 'Session not found or closed' });
       }
-      session.cart = cart;
+
+      // Look up authoritative prices from Menu DB — never trust client-supplied prices
+      const menuItemIds = cart.map(i => i.menu_item_id).filter(Boolean);
+      const menuDocs = await Menu.find({
+        _id: { $in: menuItemIds },
+        restaurant_id: session.restaurant_id,
+      }).select('_id price').lean();
+      const menuMap = new Map(menuDocs.map(m => [m._id.toString(), m]));
+
+      const sanitizedCart = cart
+        .filter(item => menuMap.has(item.menu_item_id?.toString()))
+        .map(item => ({
+          ...item,
+          price: menuMap.get(item.menu_item_id.toString()).price,
+          quantity: Math.max(1, Math.round(Number(item.quantity) || 1)),
+        }));
+
+      session.cart = sanitizedCart;
       session.recalculate();
       await session.save();
       // Broadcast updated cart to ALL users in this session (including sender)
