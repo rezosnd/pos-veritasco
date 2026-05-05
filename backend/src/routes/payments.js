@@ -62,6 +62,9 @@ router.get('/summary/:restaurantId', authenticate, async (req, res, next) => {
     }
     const { date } = req.query;
     const start = date ? new Date(date) : new Date();
+    if (isNaN(start.getTime())) {
+      return res.status(400).json({ success: false, message: 'Invalid date format' });
+    }
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setHours(23, 59, 59, 999);

@@ -109,7 +109,14 @@ router.post('/:sessionId/finalize', authenticate, async (req, res, next) => {
     session.gst_percent = bill.gstPercent;
     session.gst_amount = bill.gst;
     session.total = bill.total;
-    session.discount = req.body.discount || 0;
+    const discount = Math.round((Number(req.body.discount) || 0) * 100) / 100;
+    if (discount < 0) {
+      return res.status(400).json({ success: false, message: 'Discount cannot be negative' });
+    }
+    if (discount > bill.subtotal) {
+      return res.status(400).json({ success: false, message: 'Discount cannot exceed subtotal' });
+    }
+    session.discount = discount;
     await session.save();
     // Broadcast bill to table
     const io = req.app.get('io');

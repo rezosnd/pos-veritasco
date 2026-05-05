@@ -147,12 +147,14 @@ router.post('/:sessionId/request-bill', async (req, res, next) => {
 // PATCH /api/sessions/:sessionId/notes
 router.patch('/:sessionId/notes', authenticate, async (req, res, next) => {
   try {
-    const session = await Session.findByIdAndUpdate(
-      req.params.sessionId,
-      { notes: req.body.notes },
-      { new: true }
-    );
+    const session = await Session.findById(req.params.sessionId);
     if (!session) return res.status(404).json({ success: false, message: 'Session not found' });
+    if (req.user.role !== ROLES.SUPER_ADMIN && !req.user.belongsTo(session.restaurant_id)) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+    const notes = String(req.body.notes || '').slice(0, 500);
+    session.notes = notes;
+    await session.save();
     res.json({ success: true, data: { session } });
   } catch (err) {
     next(err);
