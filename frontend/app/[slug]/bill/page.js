@@ -216,50 +216,56 @@ export default function BillPage({ params }) {
           const b = bill?.bill;
           return (
             <div className="space-y-4">
-              {/* Bill Summary */}
-              <div className="card p-5" id="bill-print-area">
-                {/* Restaurant header for print */}
-                <div className="text-center mb-4 pb-4 border-b border-[#1f1f1f]">
-                  {logoUrl && <img src={logoUrl} alt="" className="w-12 h-12 rounded-xl object-cover mx-auto mb-2" />}
-                  <p className="font-bold text-white text-lg">{restaurant?.name}</p>
-                  {restaurant?.address?.street && <p className="text-xs text-[#555]">{restaurant.address.street}</p>}
-                  {restaurant?.phone && <p className="text-xs text-[#555]">📞 {restaurant.phone}</p>}
-                  <p className="text-xs text-[#555] mt-1">Table {tableNumber} · {new Date().toLocaleString()}</p>
+              {/* Bill Summary (Thermal Paper Style) */}
+              <div className="bg-white text-zinc-900 rounded-2xl p-6 shadow-2xl font-mono max-w-md mx-auto border-2 border-dashed border-zinc-200 relative overflow-hidden" id="bill-print-area">
+                {/* Decorative top paper border line */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-zinc-300/30" />
+                
+                {/* Restaurant header */}
+                <div className="text-center mb-5 pb-5 border-b border-dashed border-zinc-300">
+                  {logoUrl && <img src={logoUrl} alt="" className="w-14 h-14 rounded-2xl object-cover mx-auto mb-2 grayscale border border-zinc-100" />}
+                  <p className="font-bold text-zinc-900 text-xl tracking-tight uppercase">{restaurant?.name}</p>
+                  {restaurant?.address?.street && <p className="text-[11px] text-zinc-500 mt-0.5">{restaurant.address.street}</p>}
+                  {restaurant?.phone && <p className="text-[11px] text-zinc-500">📞 {restaurant.phone}</p>}
+                  <p className="text-[11px] text-zinc-600 mt-1.5 font-bold uppercase tracking-wider">
+                    Table {tableNumber} {bill?.session?.customer_name ? `· Guest: ${bill.session.customer_name}` : ''}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 mt-0.5 font-medium">{new Date().toLocaleString()}</p>
                 </div>
 
                 {/* Consolidated items */}
-                <div className="space-y-2 mb-4">
-                  <p className="text-xs font-semibold text-[#555] uppercase tracking-wider mb-2">Items</p>
+                <div className="space-y-3 mb-5">
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Items</p>
                   {(bill?.items || []).map((item, i) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span className="text-[#d4d4d8] flex-1">{item.name}</span>
-                      <span className="text-[#555] w-10 text-center">×{item.quantity}</span>
-                      <span className="text-white font-medium w-16 text-right">₹{item.subtotal}</span>
+                    <div key={i} className="flex justify-between text-sm text-zinc-800">
+                      <span className="font-semibold flex-1 truncate">{item.name}</span>
+                      <span className="text-zinc-500 w-12 text-center font-bold">×{item.quantity}</span>
+                      <span className="font-bold w-16 text-right">₹{item.subtotal}</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Totals */}
-                <div className="border-t border-[#1f1f1f] pt-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#71717a]">Subtotal</span>
-                    <span className="text-white">₹{b?.subtotal || 0}</span>
+                <div className="border-t border-dashed border-zinc-300 pt-4 space-y-2 text-sm text-zinc-700">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span className="font-bold text-zinc-900">₹{b?.subtotal || 0}</span>
                   </div>
                   {(b?.gst || 0) > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#71717a]">GST ({b?.gstPercent}%)</span>
-                      <span className="text-white">₹{b?.gst || 0}</span>
+                    <div className="flex justify-between">
+                      <span>GST ({b?.gstPercent}%)</span>
+                      <span className="font-bold text-zinc-900">₹{b?.gst || 0}</span>
                     </div>
                   )}
                   {(b?.discount || 0) > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-green-400">Discount</span>
-                      <span className="text-green-400">-₹{b?.discount}</span>
+                    <div className="flex justify-between text-emerald-700">
+                      <span>Discount</span>
+                      <span className="font-bold">-₹{b?.discount}</span>
                     </div>
                   )}
-                  <div className="flex justify-between font-bold text-lg border-t border-[#1f1f1f] pt-2">
-                    <span className="text-white">Total</span>
-                    <span style={{ color: brand }}>₹{b?.total || 0}</span>
+                  <div className="flex justify-between font-bold text-base text-zinc-900 border-t border-dashed border-zinc-300 pt-3 mt-1">
+                    <span>TOTAL AMOUNT</span>
+                    <span className="text-lg">₹{b?.total || 0}</span>
                   </div>
                 </div>
               </div>

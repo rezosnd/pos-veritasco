@@ -129,17 +129,48 @@ html, body {
 
 /* ── Print Styles (Thermal Receipt 80mm) ────────────────────────────────── */
 @media print {
-  * { color: black !important; background: white !important; }
-  body { font-family: 'Courier New', monospace; font-size: 12px; }
-  .no-print { display: none !important; }
-  .print-receipt {
-    width: 80mm;
-    max-width: 80mm;
-    margin: 0 auto;
-    padding: 4mm;
+  /* Hide every single element on the web page */
+  body * {
+    visibility: hidden;
   }
-  .print-divider { border-top: 1px dashed #000; margin: 4px 0; }
-  @page { margin: 0; size: 80mm auto; }
+  
+  /* Make only the print area and its subcomponents visible */
+  #bill-print-area, #bill-print-area * {
+    visibility: visible;
+  }
+  
+  /* Position the print area at the absolute top left of the page */
+  #bill-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    padding: 4mm !important;
+    margin: 0 !important;
+  }
+  
+  /* Style receipt content for thermal paper */
+  #bill-print-area p, #bill-print-area span, #bill-print-area h1, #bill-print-area h2, #bill-print-area div {
+    color: #000000 !important;
+    background: transparent !important;
+  }
+
+  /* Force borders and dividers to be dark dashed lines */
+  #bill-print-area .border-b, #bill-print-area .border-t {
+    border-color: #000000 !important;
+    border-style: dashed !important;
+  }
+  
+  @page {
+    margin: 0;
+    size: 80mm auto;
+  }
 }
 
 /* ── Animation Utilities ─────────────────────────────────────────────────── */

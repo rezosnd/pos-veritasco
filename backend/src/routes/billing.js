@@ -58,6 +58,8 @@ router.get('/:sessionId', async (req, res, next) => {
           status: session.status,
           payment_status: session.payment_status,
           created_at: session.createdAt,
+          customer_name: session.customer_name,
+          customer_phone: session.customer_phone,
         },
         restaurant,
         orders: session.order_ids,
