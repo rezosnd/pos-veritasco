@@ -377,8 +377,8 @@ export default function MenuPage({ params }) {
         })}
       </div>
 
-      {/* Floating Cart Bar */}
-      {cartCount > 0 && (
+      {/* Floating Action Bars */}
+      {cartCount > 0 ? (
         <motion.div initial={{ y: 100 }} animate={{ y: 0 }}
           className="fixed bottom-0 left-0 right-0 p-4 z-40">
           <div className="max-w-2xl mx-auto">
@@ -391,6 +391,24 @@ export default function MenuPage({ params }) {
             </button>
           </div>
         </motion.div>
+      ) : (
+        session?._id && (
+          <motion.div initial={{ y: 100 }} animate={{ y: 0 }}
+            className="fixed bottom-0 left-0 right-0 p-4 z-40">
+            <div className="max-w-2xl mx-auto">
+              <button onClick={() => router.push(`/${params.slug}/bill?session=${session._id}&table=${tableNumber}`)}
+                className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-between px-5 text-sm shadow-2xl bg-[#111] border border-[#2a2a2a] hover:bg-[#1a1a1a] transition-all">
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+                  <span className="font-semibold text-[#a1a1aa]">Table Session Active</span>
+                </span>
+                <span className="flex items-center gap-1 font-bold" style={{ color: brand }}>
+                  📋 View Active Orders & Bill →
+                </span>
+              </button>
+            </div>
+          </motion.div>
+        )
       )}
     </div>
   );

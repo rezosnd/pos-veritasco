@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Loader2, CheckCircle, Phone, MessageCircle, QrCode, Printer, RefreshCw, Clock, ChefHat, XCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { billingApi, sessionApi, orderApi } from '@/lib/api';
+import { billingApi, sessionApi, orderApi, paymentApi } from '@/lib/api';
 import { useRestaurant } from '@/lib/restaurantContext';
 import { connectSocket } from '@/lib/socket';
 import useAuthStore from '@/store/authStore';
@@ -30,7 +30,26 @@ export default function BillPage({ params }) {
   const [billRequested, setBillRequested] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [paid, setPaid] = useState(false);
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'bill'
+   const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'bill'
+   const [confirming, setConfirming] = useState(false);
+
+   const handleConfirmPayment = async (method) => {
+     if (!sessionId) return;
+     if (!confirm(`Settle bill via ${method.toUpperCase()}?`)) return;
+     setConfirming(true);
+     try {
+       await paymentApi.confirm(sessionId, {
+         payment_method: method,
+         payment_reference: method === 'upi' ? 'Staff Confirmed' : 'Cash Received'
+       });
+       toast.success('Payment settled and table closed successfully!');
+       loadBill();
+     } catch (err) {
+       toast.error(err.message || 'Failed to settle payment');
+     } finally {
+       setConfirming(false);
+     }
+   };
 
   const brand = restaurant?.theme_color || '#e85d04';
   const logoUrl = restaurant?.logo
@@ -222,23 +241,23 @@ export default function BillPage({ params }) {
               <div className="border-t border-[#1f1f1f] pt-3 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-[#71717a]">Subtotal</span>
-                  <span className="text-white">₹{b?.subtotal || 0}</span>
+                  <span className="text-white">₹{bill?.subtotal || 0}</span>
                 </div>
-                {(b?.gst || 0) > 0 && (
+                {(bill?.gst || 0) > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#71717a]">GST ({b?.gstPercent}%)</span>
-                    <span className="text-white">₹{b?.gst || 0}</span>
+                    <span className="text-[#71717a]">GST ({bill?.gstPercent}%)</span>
+                    <span className="text-white">₹{bill?.gst || 0}</span>
                   </div>
                 )}
-                {(b?.discount || 0) > 0 && (
+                {(bill?.discount || 0) > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-green-400">Discount</span>
-                    <span className="text-green-400">-₹{b?.discount}</span>
+                    <span className="text-green-400">-₹{bill?.discount}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-lg border-t border-[#1f1f1f] pt-2">
                   <span className="text-white">Total</span>
-                  <span style={{ color: brand }}>₹{b?.total || 0}</span>
+                  <span style={{ color: brand }}>₹{bill?.total || 0}</span>
                 </div>
               </div>
             </div>
@@ -278,9 +297,30 @@ export default function BillPage({ params }) {
 
                     {/* Print */}
                     <button onClick={() => window.print()}
-                      className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 text-[#a1a1aa] border border-[#2a2a2a] hover:border-[#3a3a3a]">
+                      className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 text-[#a1a1aa] border border-[#2a2a2a] hover:border-[#3a3a3a] mb-2">
                       <Printer size={16} /> Print Bill
                     </button>
+
+                    {/* Settle & Confirm Payment */}
+                    <div className="border-t border-[#1f1f1f] pt-4 mt-3 space-y-2">
+                      <p className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Staff Controls — Settle Bill</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleConfirmPayment('cash')}
+                          disabled={confirming}
+                          className="flex-1 py-3 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 disabled:opacity-60 transition-all"
+                        >
+                          💵 Settle Cash
+                        </button>
+                        <button
+                          onClick={() => handleConfirmPayment('upi')}
+                          disabled={confirming}
+                          className="flex-1 py-3 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center gap-1.5 disabled:opacity-60 transition-all"
+                        >
+                          📱 Settle UPI
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -309,6 +349,11 @@ export default function BillPage({ params }) {
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0f0f0f]/95 backdrop-blur-sm border-t border-[#1f1f1f]">
         <div className="max-w-2xl mx-auto">
           {user ? (
+            <button onClick={() => window.location.href = `/${restaurant?.slug}/waiter`}
+              className="w-full py-3.5 rounded-xl font-bold text-white text-sm text-center bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#252525] transition-all">
+              🔙 Back to Waiter Dashboard
+            </button>
+          ) : (
             <div className="flex gap-3">
               <button onClick={() => window.location.href = `/${restaurant?.slug}/menu?table=${tableNumber}`}
                 className="flex-1 py-3.5 rounded-xl font-semibold text-sm border transition-all"
@@ -327,12 +372,6 @@ export default function BillPage({ params }) {
                 </div>
               )}
             </div>
-          ) : (
-            <button onClick={() => window.location.href = `/${restaurant?.slug}/menu?table=${tableNumber}`}
-              className="w-full py-3.5 rounded-xl font-bold text-white text-sm text-center"
-              style={{ background: brand }}>
-              + Order More Items
-            </button>
           )}
         </div>
       </div>

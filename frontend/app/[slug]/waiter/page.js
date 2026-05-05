@@ -277,18 +277,39 @@ export default function WaiterPage() {
                       </div>
                     )}
                     
-                    <div className="flex justify-between">
-                      <span className="text-sm text-[#71717a]">Subtotal</span>
-                      <span className="text-sm font-bold text-white">₹{session.subtotal || 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-[#71717a]">Items</span>
-                      <span className="text-sm font-bold text-white">{(session.cart || []).length}</span>
-                    </div>
+                    {/* Placed Orders Info vs Unplaced Cart Info */}
+                    {(() => {
+                      const runningTotal = (session.order_ids || [])
+                        .filter(o => !o.is_cancelled)
+                        .reduce((sum, o) => sum + (o.subtotal || 0), 0);
+                      const totalPlacedItems = (session.order_ids || [])
+                        .filter(o => !o.is_cancelled)
+                        .reduce((sum, o) => sum + o.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+                      const cartLength = (session.cart || []).length;
+
+                      return (
+                        <>
+                          <div className="flex justify-between border-b border-[#1f1f1f] pb-2 mb-2">
+                            <span className="text-sm font-semibold text-[#71717a]">Order Total</span>
+                            <span className="text-sm font-bold text-white" style={{ color: brand }}>₹{runningTotal}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-[#71717a]">Ordered Items</span>
+                            <span className="text-sm font-semibold text-white">{totalPlacedItems} items</span>
+                          </div>
+                          {cartLength > 0 && (
+                            <div className="flex justify-between text-yellow-500/80">
+                              <span className="text-sm">In Cart (unplaced)</span>
+                              <span className="text-sm font-semibold">{cartLength} items</span>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                     {session.status && (
-                      <div className="flex justify-between">
+                      <div className="flex justify-between pt-1">
                         <span className="text-sm text-[#71717a]">Status</span>
-                        <span className="text-sm font-bold text-white capitalize">{session.status}</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded bg-white/5 text-white capitalize">{session.status}</span>
                       </div>
                     )}
                   </div>
@@ -330,13 +351,25 @@ export default function WaiterPage() {
                     </div>
                   )}
                   {['active', 'occupied', 'bill_requested'].includes(selected.status) && session && (
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      onClick={finalizeBill}
-                      className="w-full py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 transition-colors"
-                    >
-                      <ShoppingBag size={16} /> Finalize & Print Bill
-                    </motion.button>
+                    <div className="space-y-2">
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => router.push(`/${restaurant.slug}/bill?session=${session._id}&table=${selected.table_number}`)}
+                        className="w-full py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-colors"
+                        style={{ background: brand }}
+                      >
+                        🧾 View Bill & Settle
+                      </motion.button>
+
+                      {session.status !== 'billed' && (
+                        <button
+                          onClick={finalizeBill}
+                          className="w-full py-2.5 rounded-xl font-semibold text-xs text-[#a1a1aa] border border-[#2a2a2a] hover:bg-white/5 flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <ShoppingBag size={12} /> Mark as Billed / Print
+                        </button>
+                      )}
+                    </div>
                   )}
 
                   {/* RE-ACTIVATE if occupied (new party) */}
