@@ -105,7 +105,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // ─── Static Files ─────────────────────────────────────────────────────────────
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
   maxAge: '7d',
   etag: true,
 }));
