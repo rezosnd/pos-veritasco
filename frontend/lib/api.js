@@ -1,14 +1,25 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.veritasco.tech/api';
 
 export const getBackendUrl = () => {
+  // If we have an explicit remote URL in environment variables, use it.
+  if (API_URL && !API_URL.includes('localhost') && !API_URL.includes('127.0.0.1')) {
+    return API_URL.replace('/api', '');
+  }
+
   let backend = API_URL.replace('/api', '');
-  if (typeof window !== 'undefined' && (backend.includes('localhost') || backend.includes('127.0.0.1'))) {
+  if (typeof window !== 'undefined') {
     const currentHost = window.location.hostname;
-    if (currentHost !== 'localhost' && currentHost !== '127.0.0.1' && !currentHost.includes('0.0.0.0')) {
-      backend = backend.replace('localhost', currentHost).replace('127.0.0.1', currentHost);
+    // If we are on a production domain, but the backend is still pointing to localhost,
+    // we need to warn or handle it. For now, we only replace if it was explicitly localhost.
+    if (backend.includes('localhost') || backend.includes('127.0.0.1')) {
+      if (currentHost !== 'localhost' && currentHost !== '127.0.0.1' && !currentHost.includes('0.0.0.0')) {
+        // If we're on a remote site, the backend must be remote too.
+        // If not specified, we return the current host (hoping it's a monorepo/same-host setup)
+        backend = backend.replace('localhost', currentHost).replace('127.0.0.1', currentHost);
+      }
     }
   }
   return backend;
