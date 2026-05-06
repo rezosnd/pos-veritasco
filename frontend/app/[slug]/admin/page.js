@@ -549,9 +549,7 @@ export default function AdminPage({ params }) {
                       </span>
                     </div>
                     <div className="p-3 bg-gray-50 border border-gray-100 rounded-2xl">
-                      <QRCodeSVG value={qrUrl} size={140}
-                        imageSettings={logoUrl ? { src: logoUrl, height: 28, width: 28, excavate: true } : undefined}
-                      />
+                      <QRCodeSVG value={qrUrl} size={140} />
                     </div>
                     <button onClick={() => { setModal('qr'); setForm({ qrUrl, name: table.display_name || table.table_number }); }}
                       className="w-full py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
@@ -840,9 +838,7 @@ export default function AdminPage({ params }) {
                     <button onClick={()=>setModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"><X size={16}/></button>
                   </div>
                   <div className="flex justify-center p-8 bg-gray-50 border border-gray-200 border-dashed rounded-3xl mx-auto w-fit">
-                    <QRCodeSVG value={form.qrUrl} size={240}
-                      imageSettings={logoUrl ? { src: logoUrl, height: 48, width: 48, excavate: true } : undefined}
-                    />
+                    <QRCodeSVG value={form.qrUrl} size={240} />
                   </div>
                   <div className="flex gap-3 mt-6">
                     <button onClick={() => { window.print(); }} className="flex-1 py-4 rounded-xl text-white font-bold text-[15px] shadow-md hover:shadow-lg active:scale-95 transition-all flex justify-center items-center gap-2" style={{background:brand}}>
