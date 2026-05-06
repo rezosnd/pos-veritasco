@@ -25,7 +25,7 @@ const server = http.createServer(app);
 // ─── Allowed Origins ─────────────────────────────────────────────────────────
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:3000'];
+  : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5000', 'http://127.0.0.1:5000'];
 
 // ─── Socket.IO ────────────────────────────────────────────────────────────────
 const io = new Server(server, {
@@ -83,9 +83,7 @@ app.use(helmet({
 app.use(mongoSanitize());
 app.use(compression());
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5000', 'http://127.0.0.1:5000'];
+// ─── CORS ─────────────────────────────────────────────────────────────────────
 
 app.use(cors({
   origin: (origin, callback) => {
