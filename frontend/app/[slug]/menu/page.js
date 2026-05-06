@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Search, ShoppingCart, Plus, Minus, Star, Leaf, Flame, MapPin, Clock, Phone, Wifi, WifiOff, Receipt, ShieldAlert, ChevronRight, Check, Coffee, Pizza, Croissant, Utensils, Sandwich, IceCream, CupSoda } from 'lucide-react';
-import { menuApi, tableApi, sessionApi, getBackendUrl } from '@/lib/api';
+import { menuApi, tableApi, sessionApi, getBackendUrl, getFullUrl } from '@/lib/api';
 import { useRestaurant } from '@/lib/restaurantContext';
 import { connectSocket } from '@/lib/socket';
 import useCartStore from '@/store/cartStore';
@@ -158,7 +158,7 @@ export default function MenuPage({ params }) {
   });
 
   const brand = restaurant?.theme_color || 'var(--brand-600)'; // default zomato red
-  const logoUrl = restaurant?.logo ? (restaurant.logo.startsWith('http') ? restaurant.logo : `${BACKEND_URL}${restaurant.logo}`) : null;
+  const logoUrl = getFullUrl(restaurant?.logo);
 
   // ── Loading / Checking ──────────────────────────────────────────────────────
   if (restLoading || geoState === 'checking') {
@@ -312,7 +312,7 @@ export default function MenuPage({ params }) {
             {categories.map((cat, idx) => {
               const catName = typeof cat === 'string' ? cat : cat.name;
               const catImage = typeof cat === 'object' ? cat.image : null;
-              const imgUrl = catImage ? (catImage.startsWith('http') ? catImage : `${BACKEND_URL}${catImage}`) : null;
+              const imgUrl = getFullUrl(catImage);
               const isActive = activeCategory === catName;
               return (
               <div key={catName || idx} onClick={() => setActiveCategory(catName)} className="flex flex-col items-center gap-2 cursor-pointer shrink-0">
@@ -345,7 +345,7 @@ export default function MenuPage({ params }) {
         
         {filtered.map(item => {
           const qty = cart.find(c => c.menu_item_id === item._id)?.quantity || 0;
-          const imgUrl = item.image ? (item.image.startsWith('http') ? item.image : `${BACKEND_URL}${item.image}`) : null;
+          const imgUrl = getFullUrl(item.image);
           
           return (
             <motion.div key={item._id} layout

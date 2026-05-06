@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Plus, Minus, Trash2, ShoppingBag, Loader2, MessageSquare, Receipt, Utensils } from 'lucide-react';
-import { orderApi, sessionApi, getBackendUrl } from '@/lib/api';
+import { orderApi, sessionApi, getBackendUrl, getFullUrl } from '@/lib/api';
 import { useRestaurant } from '@/lib/restaurantContext';
 import useCartStore from '@/store/cartStore';
 import { validateLocation } from '@/lib/geo';
@@ -28,9 +28,7 @@ export default function CartPage({ params }) {
   }, [sessionId]);
 
   const brand = restaurant?.theme_color || 'var(--brand-600)';
-  const logoUrl = restaurant?.logo
-    ? (restaurant.logo.startsWith('http') ? restaurant.logo : `${BACKEND_URL}${restaurant.logo}`)
-    : null;
+  const logoUrl = getFullUrl(restaurant?.logo);
 
   const gst = restaurant?.gst_percent || 0;
   const itemTotal = subtotal();
@@ -125,7 +123,7 @@ export default function CartPage({ params }) {
           <div className="divide-y divide-gray-50">
             <AnimatePresence>
               {cart.map(item => {
-                const imgUrl = item.image ? (item.image.startsWith('http') ? item.image : `${BACKEND_URL}${item.image}`) : null;
+                const imgUrl = getFullUrl(item.image);
                 return (
                   <motion.div key={item.menu_item_id} layout
                     initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}

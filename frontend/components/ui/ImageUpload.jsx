@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Upload, X, Loader2, ImageIcon } from 'lucide-react';
-import { uploadApi, getBackendUrl } from '@/lib/api';
+import { uploadApi, getBackendUrl, getFullUrl } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 const BACKEND_URL = getBackendUrl();
@@ -21,7 +21,7 @@ export default function ImageUpload({ value, onChange, type = 'image', label = '
   const [drag, setDrag] = useState(false);
   const inputRef = useRef(null);
 
-  const previewUrl = value ? (value.startsWith('http') ? value : `${BACKEND_URL}${value}`) : null;
+  const previewUrl = getFullUrl(value);
 
   const doUpload = async (file) => {
     if (!file) return;

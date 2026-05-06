@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { Loader2, CheckCircle, Phone, MessageCircle, QrCode, Printer, RefreshCw, Clock, ChefHat, XCircle, ArrowLeft, Plus, Receipt, Share2 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { QRCodeSVG } from 'qrcode.react';
-import { billingApi, sessionApi, orderApi, paymentApi, getBackendUrl } from '@/lib/api';
+import { billingApi, sessionApi, orderApi, paymentApi, getBackendUrl, getFullUrl } from '@/lib/api';
 import { useRestaurant } from '@/lib/restaurantContext';
 import { connectSocket } from '@/lib/socket';
 import useAuthStore from '@/store/authStore';
@@ -56,9 +56,7 @@ export default function BillPage({ params }) {
   };
 
   const brand = restaurant?.theme_color || 'var(--brand-600)';
-  const logoUrl = restaurant?.logo
-    ? (restaurant.logo.startsWith('http') ? restaurant.logo : `${BACKEND_URL}${restaurant.logo}`)
-    : null;
+  const logoUrl = getFullUrl(restaurant?.logo);
 
   const loadBill = async () => {
     if (!sessionId) return;

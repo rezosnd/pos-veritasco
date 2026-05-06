@@ -22,7 +22,15 @@ export const getBackendUrl = () => {
       }
     }
   }
-  return backend;
+  return backend.replace(/\/$/, '');
+};
+
+export const getFullUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  const baseUrl = getBackendUrl();
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${baseUrl}${cleanPath}`;
 };
 
 const api = axios.create({

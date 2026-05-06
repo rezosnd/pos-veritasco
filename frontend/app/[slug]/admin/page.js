@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { QRCodeSVG } from 'qrcode.react';
 import { LayoutDashboard, UtensilsCrossed, Table2, Users, Settings, LogOut, Plus, Trash2, Edit2, X, Loader2, Key, Eye, EyeOff, ToggleLeft, ToggleRight, Download, ChevronRight, TrendingUp, DollarSign, Activity, Printer, Share2 } from 'lucide-react';
-import { menuApi, tableApi, userApi, restaurantApi, analyticsApi, uploadApi, getBackendUrl } from '@/lib/api';
+import { menuApi, tableApi, userApi, restaurantApi, analyticsApi, uploadApi, getBackendUrl, getFullUrl } from '@/lib/api';
 import { useRestaurant } from '@/lib/restaurantContext';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import useAuthStore from '@/store/authStore';
@@ -37,27 +37,34 @@ export default function AdminPage({ params }) {
         menuApi.getAll(restaurant._id, {}),
         tableApi.getAll(restaurant._id, {}),
         userApi.getAll({ restaurant_id: restaurant._id }),
-        fetch(`${BACKEND_URL}/api/menu/${restaurant._id}/categories`).then(r => r.json()),
+        menuApi.getCategories(restaurant._id),
       ]);
-      setMenu(m.data.items || []);
-      setTables(t.data.tables || []);
-      setStaff(s.data.users || []);
-      const fetchedCats = c.data.categories || [];
+      setMenu(m.data?.items || []);
+      setTables(t.data?.tables || []);
+      setStaff(s.data?.users || []);
+      const fetchedCats = c.data?.categories || [];
       const restCats = restaurant.categories || [];
       const mergedMap = new Map();
       
       // Normalize to lowercase for merging
-      fetchedCats.forEach(cat => mergedMap.set(cat.name.toLowerCase(), { ...cat, originalName: cat.name }));
+      fetchedCats.forEach(cat => {
+        if (cat && cat.name) {
+          mergedMap.set(cat.name.toLowerCase(), { ...cat, originalName: cat.name });
+        }
+      });
+      
       restCats.forEach(cat => {
-        const key = cat.name.toLowerCase();
-        if (!mergedMap.has(key)) {
-          mergedMap.set(key, { ...cat, originalName: cat.name });
-        } else {
-          const existing = mergedMap.get(key);
-          mergedMap.set(key, { 
-            ...existing, 
-            image: cat.image || existing.image 
-          });
+        if (cat && cat.name) {
+          const key = cat.name.toLowerCase();
+          if (!mergedMap.has(key)) {
+            mergedMap.set(key, { ...cat, originalName: cat.name });
+          } else {
+            const existing = mergedMap.get(key);
+            mergedMap.set(key, { 
+              ...existing, 
+              image: cat.image || existing.image 
+            });
+          }
         }
       });
       setCategories(Array.from(mergedMap.values()).map(c => ({ name: c.originalName, image: c.image })));
@@ -212,7 +219,7 @@ export default function AdminPage({ params }) {
   };
 
   const brand = restaurant?.theme_color || 'var(--brand-600)';
-  const logoUrl = restaurant?.logo ? (restaurant.logo.startsWith('http') ? restaurant.logo : `${BACKEND_URL}${restaurant.logo}`) : null;
+  const logoUrl = getFullUrl(restaurant?.logo);
 
   const TABS = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Analytics' },
@@ -434,7 +441,7 @@ export default function AdminPage({ params }) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {menu.map(item => {
-                const img = item.image ? (item.image.startsWith('http') ? item.image : `${BACKEND_URL}${item.image}`) : null;
+                const img = getFullUrl(item.image);
                 return (
                   <div key={item._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col">
                     <div className="h-40 bg-gray-50 relative border-b border-gray-100 overflow-hidden">
@@ -495,7 +502,7 @@ export default function AdminPage({ params }) {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
               {categories.map((cat, i) => {
-                const img = cat.image ? (cat.image.startsWith('http') ? cat.image : `${BACKEND_URL}${cat.image}`) : null;
+                const img = getFullUrl(cat.image);
                 return (
                   <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col items-center p-4">
                     <div className="w-24 h-24 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden mb-3 relative">
