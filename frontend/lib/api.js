@@ -4,20 +4,17 @@ import Cookies from 'js-cookie';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.veritasco.tech/api';
 
 export const getBackendUrl = () => {
-  // If we have an explicit remote URL in environment variables, use it.
-  if (API_URL && !API_URL.includes('localhost') && !API_URL.includes('127.0.0.1')) {
-    return API_URL.replace('/api', '');
-  }
-
   let backend = API_URL.replace('/api', '');
+  
   if (typeof window !== 'undefined') {
     const currentHost = window.location.hostname;
-    // If we are on a production domain, but the backend is still pointing to localhost,
-    // we need to warn or handle it. For now, we only replace if it was explicitly localhost.
+    // If backend is localhost/127.0.0.1, make sure it matches the current host's loopback preference
     if (backend.includes('localhost') || backend.includes('127.0.0.1')) {
-      if (currentHost !== 'localhost' && currentHost !== '127.0.0.1' && !currentHost.includes('0.0.0.0')) {
-        // If we're on a remote site, the backend must be remote too.
-        // If not specified, we return the current host (hoping it's a monorepo/same-host setup)
+      if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+        backend = backend.replace('localhost', currentHost).replace('127.0.0.1', currentHost);
+      } else if (!currentHost.includes('0.0.0.0')) {
+        // We are on a remote IP or domain, but backend is localhost. 
+        // This usually means we need to hit the same host.
         backend = backend.replace('localhost', currentHost).replace('127.0.0.1', currentHost);
       }
     }

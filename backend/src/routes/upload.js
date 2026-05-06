@@ -9,7 +9,7 @@ const sharp = require('sharp');
 const { authenticate } = require('../middleware/auth');
 
 // ── Storage ───────────────────────────────────────────────────────────────────
-const uploadDir = path.join(process.cwd(), 'uploads');
+const uploadDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.memoryStorage(); // process in memory, then write via sharp
