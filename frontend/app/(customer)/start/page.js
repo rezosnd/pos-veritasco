@@ -8,7 +8,9 @@ import { restaurantApi, sessionApi } from '@/lib/api';
 import { validateLocation } from '@/lib/geo';
 import useCartStore from '@/store/cartStore';
 
-export default function StartPage() {
+import { Suspense } from 'react';
+
+function StartPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const setSession = useCartStore((s) => s.setSession);
@@ -182,5 +184,17 @@ export default function StartPage() {
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+export default function StartPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
+        <UtensilsCrossed size={48} className="text-[#333] animate-pulse" />
+      </div>
+    }>
+      <StartPageContent />
+    </Suspense>
   );
 }
