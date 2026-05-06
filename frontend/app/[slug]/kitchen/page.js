@@ -37,7 +37,7 @@ export default function KitchenPage() {
   }, [restaurant]);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
+  useEffect(() => { const t = setInterval(load, 5000); return () => clearInterval(t); }, [load]);
 
   useEffect(() => {
     if (!restaurant) return;

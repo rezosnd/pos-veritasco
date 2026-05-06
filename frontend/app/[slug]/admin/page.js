@@ -31,7 +31,7 @@ export default function AdminPage({ params }) {
 
   const load = useCallback(async () => {
     if (!restaurant) return;
-    setLoading(true);
+    if (menu.length === 0 && tables.length === 0) setLoading(true);
     try {
       const [m, t, s, c] = await Promise.all([
         menuApi.getAll(restaurant._id, {}),
@@ -73,7 +73,11 @@ export default function AdminPage({ params }) {
     finally { setLoading(false); }
   }, [restaurant]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { 
+    load();
+    const interval = setInterval(() => load(), 5000);
+    return () => clearInterval(interval);
+  }, [load]);
 
   const setF = (k, v) => setForm(p => ({ ...p, [k]: v }));
 

@@ -52,7 +52,11 @@ export default function WaiterPage() {
     finally { setLoading(false); }
   }, [restaurant]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { 
+    load();
+    const interval = setInterval(() => load(), 5000);
+    return () => clearInterval(interval);
+  }, [load]);
 
   // Socket real-time updates
   useEffect(() => {
