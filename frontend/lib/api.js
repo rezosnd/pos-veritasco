@@ -4,7 +4,13 @@ import Cookies from 'js-cookie';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.veritasco.tech/api';
 
 export const getBackendUrl = () => {
-  let backend = API_URL.replace('/api', '');
+  let backend = API_URL;
+  try {
+    const url = new URL(API_URL);
+    backend = `${url.protocol}//${url.host}`;
+  } catch (e) {
+    backend = API_URL.replace('/api', '').replace(/\/$/, '');
+  }
   
   if (typeof window !== 'undefined') {
     const currentHost = window.location.hostname;
@@ -14,7 +20,6 @@ export const getBackendUrl = () => {
         backend = backend.replace('localhost', currentHost).replace('127.0.0.1', currentHost);
       } else if (!currentHost.includes('0.0.0.0')) {
         // We are on a remote IP or domain, but backend is localhost. 
-        // This usually means we need to hit the same host.
         backend = backend.replace('localhost', currentHost).replace('127.0.0.1', currentHost);
       }
     }

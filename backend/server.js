@@ -116,7 +116,16 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   maxAge: '7d',
   etag: true,
   setHeaders: (res) => {
-    res.set('Access-Control-Allow-Origin', '*'); // Ensure static files are accessible cross-origin
+    res.set('Access-Control-Allow-Origin', '*');
+  }
+}));
+
+// Fallback for /api/uploads (some legacy data or proxies might use this)
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '7d',
+  etag: true,
+  setHeaders: (res) => {
+    res.set('Access-Control-Allow-Origin', '*');
   }
 }));
 
