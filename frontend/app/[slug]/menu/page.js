@@ -316,16 +316,16 @@ export default function MenuPage({ params }) {
               const isActive = activeCategory === catName;
               return (
               <div key={catName || idx} onClick={() => setActiveCategory(catName)} className="flex flex-col items-center gap-2 cursor-pointer shrink-0">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all overflow-hidden ${isActive ? 'shadow-md border-2 text-gray-900' : 'bg-gray-50 border border-gray-100 text-gray-400'}`}
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all overflow-hidden relative ${isActive ? 'shadow-md border-2 text-gray-900' : 'bg-gray-50 border border-gray-100 text-gray-400'}`}
                   style={{ borderColor: isActive ? brand : 'transparent', background: isActive ? `${brand}10` : '' }}>
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-400">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-400 opacity-50">
                     {CAT_ICONS[catName] || <Utensils size={28} strokeWidth={1.5} />}
                   </div>
                   {imgUrl && (
-                    <img src={imgUrl} alt={catName} loading="lazy" onError={(e) => { e.target.style.opacity = '0'; }} className="relative z-10 w-full h-full object-cover transition-opacity" />
+                    <img src={imgUrl} alt={catName} loading="lazy" onError={(e) => { e.target.style.opacity = '0'; }} className="relative z-10 w-full h-full object-contain transition-opacity" />
                   )}
                 </div>
-                <span className={`text-[11px] font-semibold whitespace-nowrap ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
+                <span className={`text-[11px] font-semibold text-center leading-tight ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
                   {catName}
                 </span>
               </div>
@@ -369,7 +369,7 @@ export default function MenuPage({ params }) {
                   </div>
                   <h3 className="font-bold text-gray-900 text-[15px] leading-snug">{item.name}</h3>
                   <div className="font-semibold text-gray-900 text-sm mt-1">₹{item.price}</div>
-                  {item.description && <p className="text-xs text-gray-500 line-clamp-2 mt-2 leading-relaxed">{item.description}</p>}
+                  {item.description && <p className="text-xs text-gray-500 mt-2 leading-relaxed">{item.description}</p>}
                 </div>
               </div>
 

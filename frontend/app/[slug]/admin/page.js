@@ -96,8 +96,9 @@ export default function AdminPage({ params }) {
     try {
       // Ensure we store relative paths for our own uploads
       const cleanForm = { ...form };
-      if (cleanForm.image && cleanForm.image.includes('/uploads/')) {
-        cleanForm.image = '/uploads/' + cleanForm.image.split('/uploads/')[1];
+      if (cleanForm.image && (cleanForm.image.includes('/uploads/') || cleanForm.image.includes('uploads/'))) {
+        const parts = cleanForm.image.split('uploads/');
+        cleanForm.image = '/uploads/' + parts[parts.length - 1];
       }
       
       if (form._id) await menuApi.update(restaurant._id, form._id, cleanForm);
@@ -204,8 +205,9 @@ export default function AdminPage({ params }) {
 
       // Ensure we store relative paths for our own uploads
       const cleanCats = newCats.map(c => {
-        if (c.image && c.image.includes('/uploads/')) {
-          return { ...c, image: '/uploads/' + c.image.split('/uploads/')[1] };
+        if (c.image && (c.image.includes('/uploads/') || c.image.includes('uploads/'))) {
+          const parts = c.image.split('uploads/');
+          return { ...c, image: '/uploads/' + parts[parts.length - 1] };
         }
         return c;
       });
@@ -464,8 +466,9 @@ export default function AdminPage({ params }) {
                 return (
                   <div key={item._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col">
                     <div className="h-40 bg-gray-50 relative border-b border-gray-100 overflow-hidden">
-                      {img ? <img src={img} alt={item.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : (
-                        <div className="w-full h-full flex items-center justify-center text-5xl opacity-50">🍽️</div>
+                      <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-40">🍽️</div>
+                      {img && (
+                        <img src={img} alt={item.name} loading="lazy" onError={(e) => { e.target.style.opacity = '0'; }} className="relative z-10 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       )}
                       
                       <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -525,8 +528,9 @@ export default function AdminPage({ params }) {
                 return (
                   <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col items-center p-4">
                     <div className="w-24 h-24 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden mb-3 relative">
-                      {img ? <img src={img} alt={cat.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : (
-                        <span className="text-3xl text-gray-400">🍽️</span>
+                      <div className="absolute inset-0 flex items-center justify-center text-3xl opacity-40">🍽️</div>
+                      {img && (
+                        <img src={img} alt={cat.name} loading="lazy" onError={(e) => { e.target.style.opacity = '0'; }} className="relative z-10 w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
                       )}
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
                         <button onClick={() => { setForm({ originalName: cat.name, name: cat.name, image: cat.image }); setModal('category'); }}
