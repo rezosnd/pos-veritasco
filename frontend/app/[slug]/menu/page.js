@@ -78,29 +78,31 @@ export default function MenuPage({ params }) {
   }, [restaurant]);
 
   // ── Load table + menu ───────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!restaurant || !tableNumber) return;
-    if (geoState !== 'ok') return;
-
-    Promise.all([
-      tableApi.getPublic(restaurant._id, tableNumber, token),
-      menuApi.getAll(restaurant._id, { is_available: true }),
-      menuApi.getCategories(restaurant._id),
-    ]).then(([tRes, mRes, cRes]) => {
+  const loadMenu = useCallback(async () => {
+    if (!restaurant || !tableNumber || geoState !== 'ok') return;
+    try {
+      const [tRes, mRes, cRes] = await Promise.all([
+        tableApi.getPublic(restaurant._id, tableNumber, token),
+        menuApi.getAll(restaurant._id, { is_available: true }),
+        menuApi.getCategories(restaurant._id),
+      ]);
       setTableStatus(tRes.data.table);
       setMenu(mRes.data.items || []);
       setCategories(['All', ...(cRes.data.categories || [])]);
       if (['active','occupied'].includes(tRes.data.table?.status) && tRes.data.table?.current_session_id) {
         setSession({ _id: tRes.data.table.current_session_id });
       }
-    }).catch(err => {
-      if (err.message?.toLowerCase().includes('invalid qr')) {
-        setQrError(true);
-      } else {
-        toast.error(err.message);
-      }
-    });
+    } catch (err) {
+      if (err.message?.toLowerCase().includes('invalid qr')) setQrError(true);
+      else console.error('Menu load failed', err);
+    }
   }, [restaurant, tableNumber, token, geoState]);
+
+  useEffect(() => { loadMenu(); }, [loadMenu]);
+  useEffect(() => {
+    const interval = setInterval(loadMenu, 30000); // Poll every 30s for menu updates
+    return () => clearInterval(interval);
+  }, [loadMenu]);
 
   // ── Self-activate table ─────────────────────────────────────────────────────
   const handleSelfActivate = async (e) => {
@@ -312,7 +314,7 @@ export default function MenuPage({ params }) {
             {categories.map((cat, idx) => {
               const catName = typeof cat === 'string' ? cat : cat.name;
               const catImage = typeof cat === 'object' ? cat.image : null;
-              const imgUrl = getFullUrl(catImage);
+              const imgUrl = getFullUrl(catImage) ? `${getFullUrl(catImage)}?t=${Date.now()}` : null;
               const isActive = activeCategory === catName;
               return (
               <div key={catName || idx} onClick={() => setActiveCategory(catName)} className="flex flex-col items-center gap-2 cursor-pointer shrink-0">
@@ -346,7 +348,7 @@ export default function MenuPage({ params }) {
         
         {filtered.map(item => {
           const qty = cart.find(c => c.menu_item_id === item._id)?.quantity || 0;
-          const imgUrl = getFullUrl(item.image);
+          const imgUrl = getFullUrl(item.image) ? `${getFullUrl(item.image)}?t=${new Date(item.updatedAt || Date.now()).getTime()}` : null;
           
           return (
             <motion.div key={item._id} layout
