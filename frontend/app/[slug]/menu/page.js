@@ -318,10 +318,11 @@ export default function MenuPage({ params }) {
               <div key={catName || idx} onClick={() => setActiveCategory(catName)} className="flex flex-col items-center gap-2 cursor-pointer shrink-0">
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all overflow-hidden ${isActive ? 'shadow-md border-2 text-gray-900' : 'bg-gray-50 border border-gray-100 text-gray-400'}`}
                   style={{ borderColor: isActive ? brand : 'transparent', background: isActive ? `${brand}10` : '' }}>
-                  {imgUrl ? (
-                    <img src={imgUrl} alt={catName} className="w-full h-full object-cover" />
-                  ) : (
-                    CAT_ICONS[catName] || <Utensils size={28} strokeWidth={1.5} />
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-400">
+                    {CAT_ICONS[catName] || <Utensils size={28} strokeWidth={1.5} />}
+                  </div>
+                  {imgUrl && (
+                    <img src={imgUrl} alt={catName} loading="lazy" onError={(e) => { e.target.style.opacity = '0'; }} className="relative z-10 w-full h-full object-cover transition-opacity" />
                   )}
                 </div>
                 <span className={`text-[11px] font-semibold whitespace-nowrap ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
@@ -375,10 +376,9 @@ export default function MenuPage({ params }) {
               {/* Image & Add Button Right */}
               <div className="w-[110px] shrink-0 flex flex-col items-center">
                 <div className="w-full h-[110px] rounded-2xl overflow-hidden shadow-sm bg-gray-50 border border-gray-100 relative">
-                  {imgUrl ? (
-                    <img src={imgUrl} alt={item.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>
+                  <div className="absolute inset-0 flex items-center justify-center text-3xl bg-gray-50 opacity-50">🍽️</div>
+                  {imgUrl && (
+                    <img src={imgUrl} alt={item.name} loading="lazy" onError={(e) => { e.target.style.opacity = '0'; }} className="relative z-10 w-full h-full object-cover transition-opacity" />
                   )}
                 </div>
                 

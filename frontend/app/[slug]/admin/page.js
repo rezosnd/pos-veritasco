@@ -29,55 +29,64 @@ export default function AdminPage({ params }) {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
 
-  const load = useCallback(async () => {
+  const loadDynamic = useCallback(async () => {
     if (!restaurant) return;
-    if (menu.length === 0 && tables.length === 0) setLoading(true);
     try {
-      const [m, t, s, c] = await Promise.all([
-        menuApi.getAll(restaurant._id, {}),
+      const [t, d] = await Promise.all([
         tableApi.getAll(restaurant._id, {}),
+        analyticsApi.dashboard(restaurant._id)
+      ]);
+      setTables(t.data?.tables || []);
+      setStats(d.data);
+    } catch (e) { console.error('Dynamic load failed', e); }
+  }, [restaurant]);
+
+  const loadStatic = useCallback(async () => {
+    if (!restaurant) return;
+    if (menu.length === 0) setLoading(true);
+    try {
+      const [m, s, c] = await Promise.all([
+        menuApi.getAll(restaurant._id, {}),
         userApi.getAll({ restaurant_id: restaurant._id }),
         menuApi.getCategories(restaurant._id),
       ]);
       setMenu(m.data?.items || []);
-      setTables(t.data?.tables || []);
       setStaff(s.data?.users || []);
+      
       const fetchedCats = c.data?.categories || [];
       const restCats = restaurant.categories || [];
       const mergedMap = new Map();
       
-      // Normalize to lowercase for merging
       fetchedCats.forEach(cat => {
-        if (cat && cat.name) {
-          mergedMap.set(cat.name.toLowerCase(), { ...cat, originalName: cat.name });
-        }
+        if (cat?.name) mergedMap.set(cat.name.toLowerCase(), { ...cat, originalName: cat.name });
       });
       
       restCats.forEach(cat => {
-        if (cat && cat.name) {
+        if (cat?.name) {
           const key = cat.name.toLowerCase();
-          if (!mergedMap.has(key)) {
-            mergedMap.set(key, { ...cat, originalName: cat.name });
-          } else {
+          if (!mergedMap.has(key)) mergedMap.set(key, { ...cat, originalName: cat.name });
+          else {
             const existing = mergedMap.get(key);
-            mergedMap.set(key, { 
-              ...existing, 
-              image: cat.image || existing.image 
-            });
+            mergedMap.set(key, { ...existing, image: cat.image || existing.image });
           }
         }
       });
       setCategories(Array.from(mergedMap.values()).map(c => ({ name: c.originalName, image: c.image })));
-      analyticsApi.dashboard(restaurant._id).then(r => setStats(r.data)).catch(() => {});
     } catch { toast.error('Load failed'); }
     finally { setLoading(false); }
   }, [restaurant]);
 
   useEffect(() => { 
-    load();
-    const interval = setInterval(() => load(), 5000);
-    return () => clearInterval(interval);
-  }, [load]);
+    loadStatic();
+    loadDynamic();
+    
+    // Only poll if no modal is open (prevents UI jumpiness during edits)
+    if (!modal) {
+      const interval = setInterval(() => loadDynamic(), 10000);
+      const staticInterval = setInterval(() => loadStatic(), 60000);
+      return () => { clearInterval(interval); clearInterval(staticInterval); };
+    }
+  }, [loadStatic, loadDynamic, modal]);
 
   const setF = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
@@ -85,15 +94,21 @@ export default function AdminPage({ params }) {
   const saveMenuItem = async () => {
     setSaving(true);
     try {
-      if (form._id) await menuApi.update(restaurant._id, form._id, form);
-      else await menuApi.create(restaurant._id, form);
-      toast.success('Saved successfully!'); setModal(null); load();
+      // Ensure we store relative paths for our own uploads
+      const cleanForm = { ...form };
+      if (cleanForm.image && cleanForm.image.includes('/uploads/')) {
+        cleanForm.image = '/uploads/' + cleanForm.image.split('/uploads/')[1];
+      }
+      
+      if (form._id) await menuApi.update(restaurant._id, form._id, cleanForm);
+      else await menuApi.create(restaurant._id, cleanForm);
+      toast.success('Saved successfully!'); setModal(null); loadStatic();
     } catch (e) { toast.error(e.message); } finally { setSaving(false); }
   };
 
   const deleteMenuItem = async (id) => {
     if (!confirm('Are you sure you want to delete this item?')) return;
-    await menuApi.delete(restaurant._id, id); load();
+    await menuApi.delete(restaurant._id, id); loadStatic();
   };
 
   // ── Staff handlers ─────────────────────────────────────────────────────────
@@ -102,7 +117,7 @@ export default function AdminPage({ params }) {
     try {
       if (form._id) await userApi.update(form._id, { name: form.name, phone: form.phone });
       else await userApi.create({ ...form, restaurant_id: restaurant._id });
-      toast.success('Saved successfully!'); setModal(null); load();
+      toast.success('Saved successfully!'); setModal(null); loadStatic();
     } catch (e) { toast.error(e.message); } finally { setSaving(false); }
   };
 
@@ -117,7 +132,7 @@ export default function AdminPage({ params }) {
 
   const toggleStaff = async (u) => {
     await userApi.toggleActive(u._id, !u.is_active);
-    load();
+    loadStatic();
   };
 
   const exportCSV = (data, filename) => {
@@ -200,7 +215,7 @@ export default function AdminPage({ params }) {
       toast.success('Category saved!');
       setModal(null);
       // Wait for state to settle before reloading
-      setTimeout(() => load(), 300);
+      setTimeout(() => loadStatic(), 300);
     } catch (e) { toast.error(e.message); } finally { setSaving(false); }
   };
 
@@ -211,7 +226,7 @@ export default function AdminPage({ params }) {
       await restaurantApi.update(restaurant._id, { categories: newCats });
       setRestaurant(r => ({ ...r, categories: newCats }));
       toast.success('Category removed!');
-      load();
+      loadStatic();
     } catch (e) { toast.error(e.message); }
   };
 
@@ -449,7 +464,7 @@ export default function AdminPage({ params }) {
                 return (
                   <div key={item._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col">
                     <div className="h-40 bg-gray-50 relative border-b border-gray-100 overflow-hidden">
-                      {img ? <img src={img} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : (
+                      {img ? <img src={img} alt={item.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : (
                         <div className="w-full h-full flex items-center justify-center text-5xl opacity-50">🍽️</div>
                       )}
                       
@@ -510,7 +525,7 @@ export default function AdminPage({ params }) {
                 return (
                   <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col items-center p-4">
                     <div className="w-24 h-24 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden mb-3 relative">
-                      {img ? <img src={img} alt={cat.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : (
+                      {img ? <img src={img} alt={cat.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : (
                         <span className="text-3xl text-gray-400">🍽️</span>
                       )}
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">

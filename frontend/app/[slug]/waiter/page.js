@@ -54,9 +54,12 @@ export default function WaiterPage() {
 
   useEffect(() => { 
     load();
-    const interval = setInterval(() => load(), 5000);
-    return () => clearInterval(interval);
-  }, [load]);
+    // Only poll if no table is selected (prevents UI jumpiness during table management)
+    if (!selected) {
+      const interval = setInterval(() => load(), 10000);
+      return () => clearInterval(interval);
+    }
+  }, [load, selected]);
 
   // Socket real-time updates
   useEffect(() => {
