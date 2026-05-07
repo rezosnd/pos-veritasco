@@ -52,6 +52,9 @@ export default function AdminPage({ params }) {
       ]);
       setMenu(m.data?.items || []);
       setStaff(s.data?.users || []);
+      if (c.data?.categories) {
+        setRestaurant(prev => ({ ...prev, categories: c.data.categories }));
+      }
       
       const fetchedCats = c.data?.categories || [];
       const restCats = restaurant.categories || [];
@@ -462,7 +465,7 @@ export default function AdminPage({ params }) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {menu.map(item => {
-                const img = getFullUrl(item.image);
+                const img = getFullUrl(item.image) ? `${getFullUrl(item.image)}?t=${new Date(item.updatedAt || Date.now()).getTime()}` : null;
                 return (
                   <div key={item._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col">
                     <div className="h-40 bg-gray-50 relative border-b border-gray-100 overflow-hidden">
@@ -524,7 +527,8 @@ export default function AdminPage({ params }) {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
               {categories.map((cat, i) => {
-                const img = getFullUrl(cat.image);
+                // Add a cache-buster for categories to ensure updates reflect immediately
+                const img = getFullUrl(cat.image) ? `${getFullUrl(cat.image)}?t=${Date.now()}` : null;
                 return (
                   <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group flex flex-col items-center p-4">
                     <div className="w-24 h-24 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden mb-3 relative">
